@@ -14,14 +14,19 @@ export function PlayerPanel({ G, currentPlayerId }: PlayerPanelProps) {
       <ul className="player-list">
         {G.players.map((player) => {
           const station = G.map.stations.find((s) => s.id === player.currentStationId);
+          const bankrupt = player.status.bankrupt;
           return (
             <li
               key={player.id}
-              className={`player-row ${player.id === currentPlayerId ? 'player-row--active' : ''}`}
+              className={`player-row ${player.id === currentPlayerId ? 'player-row--active' : ''} ${bankrupt ? 'player-row--bankrupt' : ''}`}
             >
               <span className="player-dot" style={{ backgroundColor: playerColor(player.id) }} />
               <span className="player-name">{player.name}</span>
-              <span className="player-station">@{station?.name ?? '?'}</span>
+              {bankrupt ? (
+                <span className="bankrupt-badge">破産</span>
+              ) : (
+                <span className="player-station">@{station?.name ?? '?'}</span>
+              )}
               <span className="player-stats">
                 現金 {player.cash.toLocaleString()}G / 物件 {player.ownedPropertyIds.length}件 /
                 総資産 {player.netWorth.toLocaleString()}G

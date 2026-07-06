@@ -29,6 +29,9 @@ export function createTradeOffer(state: GameState, input: TradeOfferInput): Rule
   if (from.id === to.id) {
     return { ok: false, reason: '自分自身とは取引できない' };
   }
+  if (from.status.bankrupt || to.status.bankrupt) {
+    return { ok: false, reason: '破産したプレイヤーはトレードに参加できない' };
+  }
   if (state.pendingTradeOffer && state.pendingTradeOffer.status === 'pending') {
     return { ok: false, reason: '未解決のトレードオファーがすでに存在する' };
   }
@@ -92,6 +95,9 @@ export function acceptTradeOffer(state: GameState, offerId: string): RuleResult 
   const to = findPlayer(state, offer.toPlayerId);
   if (!from || !to) {
     return { ok: false, reason: '取引相手が存在しない' };
+  }
+  if (from.status.bankrupt || to.status.bankrupt) {
+    return { ok: false, reason: '破産したプレイヤーはトレードに参加できない' };
   }
   if (from.cash < offer.offeredCash) {
     return { ok: false, reason: '提案者の現金が不足している' };

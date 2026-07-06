@@ -271,6 +271,19 @@ input {
   background: rgba(91, 141, 239, 0.1);
 }
 
+.player-row--bankrupt {
+  opacity: 0.55;
+}
+
+.bankrupt-badge {
+  color: #e05555;
+  border: 1px solid #e05555;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  align-self: center;
+}
+
 .player-dot {
   width: 10px;
   height: 10px;

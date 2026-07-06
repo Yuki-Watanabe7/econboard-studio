@@ -71,6 +71,9 @@ export function movePlayer(
   if (!player) {
     return { ok: false, reason: `プレイヤー ${playerId} が存在しない` };
   }
+  if (player.status.bankrupt) {
+    return { ok: false, reason: `${player.name} は破産しているため移動できない` };
+  }
   const station = findStation(state, toStationId);
   if (!station) {
     return { ok: false, reason: `駅 ${toStationId} が存在しない` };

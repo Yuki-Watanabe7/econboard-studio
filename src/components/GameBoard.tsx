@@ -41,7 +41,7 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
           {G.gameOver && <GameOverPanel G={G} />}
           <MapView
             map={G.map}
-            players={G.players}
+            players={G.players.filter((p) => !p.status.bankrupt)}
             currentPlayerId={currentPlayerId}
             reachableStationIds={G.turnStage === 'awaitingDestination' ? G.reachableStationIds : []}
             onStationClick={(stationId) => moves.moveTo(stationId)}
@@ -86,7 +86,11 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
             />
           )}
           <GameLog logs={G.logs} />
-          <DebugPanel G={G} onTriggerEvent={(eventId) => moves.triggerEconomicEvent(eventId)} />
+          <DebugPanel
+            G={G}
+            onTriggerEvent={(eventId) => moves.triggerEconomicEvent(eventId)}
+            onForceBankruptcy={(playerId) => moves.forceBankruptcy(playerId)}
+          />
         </aside>
       </div>
     </div>

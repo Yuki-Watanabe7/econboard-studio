@@ -29,6 +29,7 @@ export function GameOverPanel({ G }: GameOverPanelProps) {
                 style={{ backgroundColor: playerColor(entry.playerId) }}
               />
               <span className="player-name">{player?.name ?? entry.playerId}</span>
+              {entry.bankrupt && <span className="bankrupt-badge">破産(脱落)</span>}
               <span className="final-net-worth">総資産 {entry.netWorth.toLocaleString()}G</span>
             </li>
           );
