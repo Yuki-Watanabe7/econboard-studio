@@ -41,6 +41,7 @@ export function settleMonth(state: GameState): GameState {
 export function settleYear(state: GameState): GameState {
   let next = state;
   for (const player of state.players) {
+    if (player.status.bankrupt) continue; // 破産者は脱落済みのため決算対象外
     const income = player.ownedPropertyIds.reduce((sum, propertyId) => {
       const property = next.properties.find((p) => p.id === propertyId);
       if (!property) return sum;
@@ -59,16 +60,24 @@ export function settleYear(state: GameState): GameState {
   return recalculateAllNetWorth(next);
 }
 
-/** 総資産降順の最終順位を作る。同額は同順位、次の順位は人数分飛ぶ(1,1,3 形式) */
+/**
+ * 総資産降順の最終順位を作る。同額は同順位、次の順位は人数分飛ぶ(1,1,3 形式)。
+ * 破産者は脱落扱いとし、総資産に関わらず非破産者より下位に置く(破産者同士は総資産降順)。
+ */
 export function buildFinalRanking(state: GameState): FinalRankingEntry[] {
-  const sorted = [...state.players].sort((a, b) => b.netWorth - a.netWorth);
-  let prevNetWorth: number | null = null;
+  const sorted = [...state.players].sort((a, b) => {
+    if (a.status.bankrupt !== b.status.bankrupt) return a.status.bankrupt ? 1 : -1;
+    return b.netWorth - a.netWorth;
+  });
+  let prev: { netWorth: number; bankrupt: boolean } | null = null;
   let prevRank = 1;
   return sorted.map((player, index) => {
-    const rank = player.netWorth === prevNetWorth ? prevRank : index + 1;
-    prevNetWorth = player.netWorth;
+    const bankrupt = player.status.bankrupt;
+    const isTie = prev !== null && player.netWorth === prev.netWorth && bankrupt === prev.bankrupt;
+    const rank = isTie ? prevRank : index + 1;
+    prev = { netWorth: player.netWorth, bankrupt };
     prevRank = rank;
-    return { playerId: player.id, netWorth: player.netWorth, rank };
+    return { playerId: player.id, netWorth: player.netWorth, rank, bankrupt };
   });
 }
 

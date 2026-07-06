@@ -15,6 +15,9 @@ export function buyProperty(
   if (!player) {
     return { ok: false, reason: `プレイヤー ${playerId} が存在しない` };
   }
+  if (player.status.bankrupt) {
+    return { ok: false, reason: `${player.name} は破産しているため購入できない` };
+  }
   const property = findProperty(state, propertyId);
   if (!property) {
     return { ok: false, reason: `物件 ${propertyId} が存在しない` };

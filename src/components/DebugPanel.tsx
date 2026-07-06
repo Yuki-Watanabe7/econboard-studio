@@ -4,10 +4,11 @@ import { sampleEvents } from '../game/sampleData';
 interface DebugPanelProps {
   G: GameState;
   onTriggerEvent: (eventId: string) => void;
+  onForceBankruptcy: (playerId: string) => void;
 }
 
-/** 開発用パネル: 経済イベントの手動発火と GameState の確認 */
-export function DebugPanel({ G, onTriggerEvent }: DebugPanelProps) {
+/** 開発用パネル: 経済イベント・破産の手動発火と GameState の確認 */
+export function DebugPanel({ G, onTriggerEvent, onForceBankruptcy }: DebugPanelProps) {
   // map はサイズが大きく不変なので JSON 表示からは省く
   const rest = { ...G, map: `(${G.map.name} — 表示省略)` };
 
@@ -31,6 +32,20 @@ export function DebugPanel({ G, onTriggerEvent }: DebugPanelProps) {
         {G.economicState.activeModifiers.length > 0 && (
           <p className="muted">有効な経済効果: {G.economicState.activeModifiers.length}件</p>
         )}
+      </div>
+      <div className="debug-events">
+        <p className="muted">強制破産(将来は支払い系イベントから発生させる):</p>
+        <div className="button-row">
+          {G.players.map((player) => (
+            <button
+              key={player.id}
+              onClick={() => onForceBankruptcy(player.id)}
+              disabled={G.gameOver || player.status.bankrupt}
+            >
+              {player.name}を破産
+            </button>
+          ))}
+        </div>
       </div>
       <details>
         <summary>GameState を表示(map を除く)</summary>

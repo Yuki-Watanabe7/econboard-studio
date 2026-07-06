@@ -13,6 +13,7 @@ import {
   type TradeOfferInput,
 } from './rules/trade';
 import { applyEconomicEvent } from './rules/economy';
+import { declareBankruptcy, skipBankruptPlayerTurn } from './rules/bankruptcy';
 import { sampleEvents } from './sampleData';
 
 /**
@@ -110,6 +111,14 @@ const triggerEconomicEvent: Move<GameState> = ({ G }, eventId: string) => {
   return result.state;
 };
 
+/** 開発用: 指定プレイヤーを強制的に破産させる(将来は支払い系イベントから発生する想定) */
+const forceBankruptcy: Move<GameState> = ({ G }, playerId: PlayerId) => {
+  if (G.gameOver) return INVALID_MOVE;
+  const result = declareBankruptcy(G, playerId);
+  if (!result.ok) return INVALID_MOVE;
+  return result.state;
+};
+
 export const EconBoardGame: Game<GameState> = {
   name: 'econboard',
 
@@ -121,8 +130,21 @@ export const EconBoardGame: Game<GameState> = {
   maxPlayers: 4,
 
   turn: {
-    onBegin: ({ G, ctx }) => {
-      G.currentPlayerId = ctx.currentPlayer as PlayerId;
+    onBegin: ({ G, ctx, events }) => {
+      let next: GameState = { ...G, currentPlayerId: ctx.currentPlayer as PlayerId };
+      // 破産プレイヤーの手番は自動スキップする(カレンダー進行は endPlayerTurn で通常どおり行う)
+      const player = findPlayer(next, next.currentPlayerId);
+      if (!next.gameOver && player?.status.bankrupt) {
+        const result = skipBankruptPlayerTurn(next, ctx.playOrderPos === ctx.numPlayers - 1);
+        if (result.ok) {
+          next = result.state;
+          // スキップ中の年次決算でゲームが終了した場合は手番を回さない
+          if (!next.gameOver) {
+            events.endTurn();
+          }
+        }
+      }
+      return next;
     },
   },
 
@@ -135,5 +157,6 @@ export const EconBoardGame: Game<GameState> = {
     acceptTradeOffer: acceptTradeOfferMove,
     rejectTradeOffer: rejectTradeOfferMove,
     triggerEconomicEvent,
+    forceBankruptcy,
   },
 };

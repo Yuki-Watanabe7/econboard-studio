@@ -159,6 +159,8 @@ export interface FinalRankingEntry {
   netWorth: number;
   /** 1始まり。同額は同順位とし、次の順位は人数分飛ぶ(1,1,3 形式) */
   rank: number;
+  /** 破産による脱落者は総資産に関わらず非破産者より下位になる */
+  bankrupt: boolean;
 }
 
 export interface GameState {
