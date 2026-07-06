@@ -68,13 +68,14 @@ const buyPropertyMove: Move<GameState> = ({ G }, propertyId: PropertyId) => {
   return result.state;
 };
 
-const endTurnMove: Move<GameState> = ({ G, ctx, events }) => {
+const endTurnMove: Move<GameState> = ({ G, ctx, events, random }) => {
   if (G.gameOver) return INVALID_MOVE;
   // サイコロ前('idle')・移動途中('awaitingDestination')ではターンを終了できない。
   // 手番は必ず「サイコロ → 移動 → (任意で購入等) → ターン終了」の順に進む(issue #3)。
   if (G.turnStage !== 'arrived') return INVALID_MOVE;
   const isLastPlayerInRound = ctx.playOrderPos === ctx.numPlayers - 1;
-  const result = endPlayerTurn(G, isLastPlayerInRound);
+  // 乱数は年末の物件価格改定(fluctuatePropertyPrices)に使われる
+  const result = endPlayerTurn(G, isLastPlayerInRound, () => random.Number());
   if (!result.ok) return INVALID_MOVE;
   // 最終年の年次決算でゲームが終了した場合は手番を回さない
   if (!result.state.gameOver) {
@@ -136,12 +137,14 @@ export const EconBoardGame: Game<GameState> = {
   maxPlayers: 4,
 
   turn: {
-    onBegin: ({ G, ctx, events }) => {
+    onBegin: ({ G, ctx, events, random }) => {
       let next: GameState = { ...G, currentPlayerId: ctx.currentPlayer as PlayerId };
       // 破産プレイヤーの手番は自動スキップする(カレンダー進行は endPlayerTurn で通常どおり行う)
       const player = findPlayer(next, next.currentPlayerId);
       if (!next.gameOver && player?.status.bankrupt) {
-        const result = skipBankruptPlayerTurn(next, ctx.playOrderPos === ctx.numPlayers - 1);
+        const result = skipBankruptPlayerTurn(next, ctx.playOrderPos === ctx.numPlayers - 1, () =>
+          random.Number(),
+        );
         if (result.ok) {
           next = result.state;
           // スキップ中の年次決算でゲームが終了した場合は手番を回さない

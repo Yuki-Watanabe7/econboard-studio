@@ -40,6 +40,7 @@ npm run format   # Prettier で整形
   (直前の駅へは引き返せない。行き止まりのみ折り返し可)
 - 到着駅の物件を購入
 - 全プレイヤーの手番が一巡すると1ヶ月進行。12月終了時に**年次決算**(保有物件の収益が現金に加算)
+- **物件価格の年次変動**: 年次決算後に全物件の価格が `growthPotential` / `riskLevel` に応じて変動(下記「物件価格の年次変動」参照)
 - **ゲーム終了条件**: 指定年数(既定: 3年)の最終年の年次決算後、総資産ランキングで勝敗を確定
   (同額1位は同率優勝。終了後は移動・購入・トレード・イベント発火のすべてが無効)
 - **駅マス種別とイベント駅**: イベント駅(`stationType: 'event'`)に到着すると経済イベントが自動発生(下記「駅マス種別とイベント発生ルール」参照)
@@ -82,6 +83,42 @@ npm run format   # Prettier で整形
 - 開発用パネルの手動発火(`triggerEconomicEvent`)はデバッグ用途として残していますが、
   通常のゲーム内発生経路はイベント駅への到着です
 
+### 物件価格の年次変動
+
+各物件の価格(`price`)は固定ではなく、**年次決算のあと(年が繰り上がる直前)に改定**されます
+(`rules/propertyValuation.ts` の `fluctuatePropertyPrices`。`advanceMonth` から呼ばれます)。
+
+変動モデル:
+
+```text
+変動率 = 期待成長率(growthPotential) + 一様ノイズ(riskLevel に応じた振れ幅)
+新価格 = max(最低価格, round(現在価格 × (1 + 変動率)))
+```
+
+| 属性                      | 値        | 効果                           |
+| ------------------------- | --------- | ------------------------------ |
+| `growthPotential`(成長性) | 1 / 2 / 3 | 期待成長率 -2% / +2% / +6%     |
+| `riskLevel`(リスク)       | 1 / 2 / 3 | ノイズ振れ幅 ±4% / ±10% / ±18% |
+
+- 成長性が高いほど**上昇しやすく**、リスクが高いほど**上下に大きく振れます**
+  (高成長・高リスク物件はハイリスク・ハイリターンになる)
+- 価格は整数に丸められ、**基準価格(`basePrice`)の30%を下回りません**
+- 乱数は物件1件につき1回、`properties` の配列順に消費します
+  (`rollDice` と同じく注入方式。boardgame.io のシード固定で再現可能)
+- 収益(価格 × 収益率)・購入価格・評価額はすべて改定後の現在価格に連動します。
+  年次決算の収益支払いは**改定前の価格**で行われ、そのあと価格が改定されます
+- **最終年には改定を行いません**(最終順位が最後の決断の後の運だけで動くのを避けるため)
+- ログは冗長にならないよう**集約1件**(上昇/下落件数と平均変動率)+
+  **変動率 ±10% 以上の物件のみ個別出力**します
+- UI(物件リスト)では現在価格の横に基準価格からの騰落率(▲/▼)を表示します
+
+**設計判断(basePrice / price)**: 編集対象データ(`data/properties.ts`)には従来どおり
+`price`(初期価格)だけを書き、組み立て時(`sampleData.ts` の `buildProperties`)に
+`basePrice = 初期 price` を自動導出します。ゲーム中は `price` を「現在価格」として更新し、
+`basePrice` は最低価格の基準と UI の騰落率表示にのみ使う不変値です。
+経済イベントの評価倍率(`valueMultiplier`)は一時的な倍率として**評価時にのみ**掛かり、
+`price` 自体は変えないため、恒久的な価格変動と二重計上にはなりません。
+
 ### 破産ルール
 
 MVP では「物件売却による救済」のない、シンプルで明確な破産ルールを採用しています。
@@ -119,6 +156,7 @@ src/
       stationEffects.ts #  駅到着時のマス効果(イベント駅での経済イベント発生)
       property.ts     #   物件購入
       settlement.ts   #   月次/年次決算・総資産計算・カレンダー進行
+      propertyValuation.ts # 物件価格の年次改定(growthPotential / riskLevel)
       trade.ts        #   トレードオファーの作成/受諾/拒否
       economy.ts      #   経済イベント・収益率/評価額の倍率計算
       bankruptcy.ts   #   支払い・破産処理・破産手番のスキップ
@@ -131,21 +169,21 @@ src/
 
 - **ルールはすべて純粋関数**: `rules/` の関数は `GameState` を受け取り、新しい `GameState` を返すか、`{ ok: false, reason }` で失敗理由を返します。boardgame.io 層(`game.ts`)は「move 引数の受け渡しと INVALID_MOVE への変換」のみを行い、ルールを一切持ちません。これにより UI や boardgame.io を差し替えてもゲームロジックはそのまま使えます。
 - **データは JSON に近い構造**: 型はすべてプレーンオブジェクトで、ID 文字列で相互参照します。将来 JSON ファイルやエディタ UI からの読み込みにそのまま移行できます。
-- **冗長情報の自動導出**: 駅の `connectedStationIds` と `propertyIds` は手書きせず、路線(`routes.ts`)と物件(`properties.ts`)から組み立て時に導出します(`sampleData.ts` の `buildStations`)。編集時の参照ミスを構造的に防ぐためです。
+- **冗長情報の自動導出**: 駅の `connectedStationIds` と `propertyIds` は手書きせず、路線(`routes.ts`)と物件(`properties.ts`)から組み立て時に導出します(`sampleData.ts` の `buildStations`)。物件の基準価格 `basePrice` も同様に初期 `price` から導出します(`buildProperties`)。編集時の参照ミス・重複記載を構造的に防ぐためです。
 - **乱数の注入**: `rollDice` は乱数生成器を引数で受け取ります。テストでは固定値、実行時は boardgame.io の `random` プラグイン(リプレイ・シード対応)を使います。
 - **時間の進行**: 全プレイヤーの手番一巡 = 1ヶ月。月次処理(`settleMonth`)で期限切れ経済効果の除去と総資産再計算、12月終了時の年次決算(`settleYear`)で物件収益を支払います。
 - **ゲーム終了**: `gameLengthYears`(既定3年、`createInitialState` のオプションで変更可)で指定した最終年の年次決算後、総資産を再計算して最終順位を確定します(`finalizeGame`)。勝者・順位は `GameState` の `winnerPlayerIds` / `finalRanking` に保持され、同額1位は複数勝者になります。boardgame.io の `endIf` ではなく `GameState` 側で終了状態を持つことで、保存・リプレイ・UI 表示から扱いやすくしています。
 
 ## ゲームデータ設計
 
-| 概念          | 型                                                                            | 概要                                         |
-| ------------- | ----------------------------------------------------------------------------- | -------------------------------------------- |
-| GameMap       | `regions` / `stations` / `edges`                                              | 路線図はグラフ。駅がノード、路線が無向エッジ |
-| Station       | `id, name, regionId, stationType, position, connectedStationIds, propertyIds` | SVG 座標とマス種別(normal / event)を持つ     |
-| Property      | `price, baseYieldRate, category, riskLevel, growthPotential, ownerPlayerId`   | 年間収益 = 価格 × 収益率 × 経済倍率          |
-| Player        | `cash, currentStationId, ownedPropertyIds, netWorth, status`                  | 総資産 = 現金 + 物件評価額                   |
-| TradeOffer    | `offeredCash/PropertyIds, requestedCash/PropertyIds, status, expiresOnTurn`   | pending は同時に1件のみ                      |
-| EconomicEvent | `effects[](地域 or カテゴリ × 収益/評価倍率), durationMonths`                 | 適用すると有効期限付き modifier になる       |
+| 概念          | 型                                                                                     | 概要                                                      |
+| ------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| GameMap       | `regions` / `stations` / `edges`                                                       | 路線図はグラフ。駅がノード、路線が無向エッジ              |
+| Station       | `id, name, regionId, stationType, position, connectedStationIds, propertyIds`          | SVG 座標とマス種別(normal / event)を持つ                  |
+| Property      | `price, basePrice, baseYieldRate, category, riskLevel, growthPotential, ownerPlayerId` | 年間収益 = 現在価格 × 収益率 × 経済倍率。価格は年次で変動 |
+| Player        | `cash, currentStationId, ownedPropertyIds, netWorth, status`                           | 総資産 = 現金 + 物件評価額                                |
+| TradeOffer    | `offeredCash/PropertyIds, requestedCash/PropertyIds, status, expiresOnTurn`            | pending は同時に1件のみ                                   |
+| EconomicEvent | `effects[](地域 or カテゴリ × 収益/評価倍率), durationMonths`                          | 適用すると有効期限付き modifier になる                    |
 
 サンプルデータはすべて**架空都市「エコノポリス」**のものです(駅10・物件22・地域3・イベント2)。
 
@@ -162,7 +200,7 @@ src/
 
 - [ ] 目的地システム(目的地到着ボーナス)
 - [x] 駅マス種別(イベント駅)による経済イベントの自動発生(`card` / `bonus` / `tax` などの種別追加・イベント選択の重み付けは今後)
-- [ ] 物件価格の変動(growthPotential / riskLevel を使った年次変動)
+- [x] 物件価格の変動(growthPotential / riskLevel を使った年次変動)
 - [ ] トレード UI の拡充(物件同士の交換・複数物件・現金要求)
 - [x] ゲーム終了条件(指定年数経過で総資産1位が勝利)
 - [x] 破産処理(現金不足で物件を手放して脱落。売却による救済は未実装)

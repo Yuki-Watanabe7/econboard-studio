@@ -78,7 +78,7 @@ export function TradePanel({
                 const owner = G.players.find((pl) => pl.id === p.ownerPlayerId);
                 return (
                   <option key={p.id} value={p.id}>
-                    {p.name}({owner?.name} 所有 / 定価 {p.price.toLocaleString()}G)
+                    {p.name}({owner?.name} 所有 / 現在価格 {p.price.toLocaleString()}G)
                   </option>
                 );
               })}

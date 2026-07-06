@@ -11,6 +11,9 @@ import { INITIAL_CASH } from '../initialState';
 import { sampleEvents } from '../sampleData';
 import { giveProperty, setupState } from './testUtils';
 
+// 価格改定用の固定乱数: 0.5 でノイズが 0 になり、期待成長率のみが効く
+const rand = () => 0.5;
+
 // 中央ベーカリー: 価格 1200G × 収益率 0.12 = 年間 144G
 const BAKERY = 'prop-central-bakery';
 const BAKERY_INCOME = 144;
@@ -99,7 +102,7 @@ describe('settleMonth', () => {
 describe('advanceMonth', () => {
   it('通常の月は +1 される', () => {
     const state = setupState();
-    const next = advanceMonth(state);
+    const next = advanceMonth(state, rand);
     expect(next.currentMonth).toBe(5);
     expect(next.currentYear).toBe(1);
   });
@@ -109,7 +112,7 @@ describe('advanceMonth', () => {
     state = giveProperty(state, '0', BAKERY);
     state = { ...state, currentMonth: 12 };
 
-    const next = advanceMonth(state);
+    const next = advanceMonth(state, rand);
 
     expect(next.currentYear).toBe(2);
     expect(next.currentMonth).toBe(1);
@@ -123,7 +126,7 @@ describe('ゲーム終了(advanceMonth / buildFinalRanking)', () => {
     let state = setupState(); // gameLengthYears は既定の3年
     state = { ...state, currentYear: 2, currentMonth: 12 };
 
-    const next = advanceMonth(state);
+    const next = advanceMonth(state, rand);
 
     expect(next.gameOver).toBe(false);
     expect(next.currentYear).toBe(3);
@@ -136,7 +139,7 @@ describe('ゲーム終了(advanceMonth / buildFinalRanking)', () => {
     state = giveProperty(state, '0', BAKERY); // 価格 1200G / 年間収益 144G
     state = { ...state, currentYear: state.gameLengthYears, currentMonth: 12 };
 
-    const next = advanceMonth(state);
+    const next = advanceMonth(state, rand);
 
     expect(next.gameOver).toBe(true);
     // 年は繰り上がらず最終年の12月のまま
@@ -153,7 +156,7 @@ describe('ゲーム終了(advanceMonth / buildFinalRanking)', () => {
     state = giveProperty(state, '1', BAKERY); // p1 だけ物件あり → 総資産・収益とも最大
     state = { ...state, currentYear: state.gameLengthYears, currentMonth: 12 };
 
-    const next = advanceMonth(state);
+    const next = advanceMonth(state, rand);
 
     expect(next.winnerPlayerIds).toEqual(['1']);
     expect(next.finalRanking.map((e) => e.playerId)).toEqual(['1', '0', '2']);
@@ -165,7 +168,7 @@ describe('ゲーム終了(advanceMonth / buildFinalRanking)', () => {
     let state = setupState(2); // 両者とも初期現金のみで同額
     state = { ...state, currentYear: state.gameLengthYears, currentMonth: 12 };
 
-    const next = advanceMonth(state);
+    const next = advanceMonth(state, rand);
 
     expect(next.gameOver).toBe(true);
     expect(next.winnerPlayerIds).toHaveLength(2);
