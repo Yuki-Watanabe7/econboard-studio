@@ -42,7 +42,7 @@ npm run format   # Prettier で整形
 - 全プレイヤーの手番が一巡すると1ヶ月進行。12月終了時に**年次決算**(保有物件の収益が現金に加算)
 - **ゲーム終了条件**: 指定年数(既定: 3年)の最終年の年次決算後、総資産ランキングで勝敗を確定
   (同額1位は同率優勝。終了後は移動・購入・トレード・イベント発火のすべてが無効)
-- 経済イベントの適用(開発用パネルから手動発火)
+- **駅マス種別とイベント駅**: イベント駅(`stationType: 'event'`)に到着すると経済イベントが自動発生(下記「駅マス種別とイベント発生ルール」参照)
   - 地域好況: 対象地域の物件収益率が一定期間上昇
   - カテゴリ不況: 対象カテゴリの物件評価額が一定期間低下
 - プレイヤー間トレードの最小実装(物件の現金買い取り提案 → 受諾/拒否)
@@ -54,12 +54,33 @@ npm run format   # Prettier で整形
 各プレイヤーの手番は必ず次の順で進みます。
 
 1. **サイコロを振る**(`rollAndMove`)— 出目ちょうどで到達できる駅がハイライトされる
-2. **行き先を選んで移動**(`moveTo`)— ハイライトされた駅から1つ選ぶ
+2. **行き先を選んで移動**(`moveTo`)— ハイライトされた駅から1つ選ぶ。到着駅がイベント駅なら経済イベントがこの時点で自動発生する
 3. **到着後の行動(任意)** — 到着駅の物件購入、トレード提案など
 4. **ターン終了**(`endTurn`)— 次のプレイヤーへ手番が移る
 
 ターン終了は**移動を終えた後にのみ**行えます。サイコロを振る前や、行き先を選んでいない
 途中の状態では手番を終了できません(手番のパスは仕様として存在しません)。
+
+### 駅マス種別とイベント発生ルール
+
+各駅は**マス種別**(`Station.stationType`)を持ち、到着時の効果が変わります。
+
+| 種別     | 到着時の効果                              |
+| -------- | ----------------------------------------- |
+| `normal` | なし(通常駅)                              |
+| `event`  | 登録済み経済イベントから1件が自動発生する |
+
+- イベント駅への到着(`moveTo`)時、`resolveStationArrival`(`rules/stationEffects.ts`)が
+  イベント定義(`data/events.ts`)から1件を**一様ランダム**に選んで適用します
+  (乱数は boardgame.io の `random` プラグインを注入。シード固定で再現可能)
+- 発生したイベントは有効期限付きの経済 modifier となり、対象地域/カテゴリの
+  収益率・評価額に倍率で効きます(発生ログも `economy` として記録)
+- イベント駅は路線図上で**黄色の破線リング + 「!」マーク**で表示されます(凡例あり)
+- 将来 `card` / `bonus` / `tax` などの種別を追加する場合は、`types.ts` の `StationType` と
+  `schema.ts` の `stationTypeSchema` を併せて更新します。イベント選択の重み付け
+  (地域・駅種別・カテゴリ別)は `selectEconomicEvent` の拡張で対応する想定です
+- 開発用パネルの手動発火(`triggerEconomicEvent`)はデバッグ用途として残していますが、
+  通常のゲーム内発生経路はイベント駅への到着です
 
 ### 破産ルール
 
@@ -89,12 +110,13 @@ src/
     game.ts           # boardgame.io 統合(move 定義のみ。ルールは持たない)
     data/             # 編集対象のゲームデータ
       regions.ts      #   地域
-      stations.ts     #   駅(座標・所属地域)
+      stations.ts     #   駅(座標・所属地域・マス種別)
       routes.ts       #   路線(無向エッジ)
       properties.ts   #   物件
       events.ts       #   経済イベント定義
     rules/            # 純粋関数のルール層(UI/boardgame.io 非依存)
       movement.ts     #   サイコロ・到達可能駅・移動
+      stationEffects.ts #  駅到着時のマス効果(イベント駅での経済イベント発生)
       property.ts     #   物件購入
       settlement.ts   #   月次/年次決算・総資産計算・カレンダー進行
       trade.ts        #   トレードオファーの作成/受諾/拒否
@@ -116,14 +138,14 @@ src/
 
 ## ゲームデータ設計
 
-| 概念          | 型                                                                          | 概要                                         |
-| ------------- | --------------------------------------------------------------------------- | -------------------------------------------- |
-| GameMap       | `regions` / `stations` / `edges`                                            | 路線図はグラフ。駅がノード、路線が無向エッジ |
-| Station       | `id, name, regionId, position, connectedStationIds, propertyIds`            | SVG 座標を持つ                               |
-| Property      | `price, baseYieldRate, category, riskLevel, growthPotential, ownerPlayerId` | 年間収益 = 価格 × 収益率 × 経済倍率          |
-| Player        | `cash, currentStationId, ownedPropertyIds, netWorth, status`                | 総資産 = 現金 + 物件評価額                   |
-| TradeOffer    | `offeredCash/PropertyIds, requestedCash/PropertyIds, status, expiresOnTurn` | pending は同時に1件のみ                      |
-| EconomicEvent | `effects[](地域 or カテゴリ × 収益/評価倍率), durationMonths`               | 適用すると有効期限付き modifier になる       |
+| 概念          | 型                                                                            | 概要                                         |
+| ------------- | ----------------------------------------------------------------------------- | -------------------------------------------- |
+| GameMap       | `regions` / `stations` / `edges`                                              | 路線図はグラフ。駅がノード、路線が無向エッジ |
+| Station       | `id, name, regionId, stationType, position, connectedStationIds, propertyIds` | SVG 座標とマス種別(normal / event)を持つ     |
+| Property      | `price, baseYieldRate, category, riskLevel, growthPotential, ownerPlayerId`   | 年間収益 = 価格 × 収益率 × 経済倍率          |
+| Player        | `cash, currentStationId, ownedPropertyIds, netWorth, status`                  | 総資産 = 現金 + 物件評価額                   |
+| TradeOffer    | `offeredCash/PropertyIds, requestedCash/PropertyIds, status, expiresOnTurn`   | pending は同時に1件のみ                      |
+| EconomicEvent | `effects[](地域 or カテゴリ × 収益/評価倍率), durationMonths`                 | 適用すると有効期限付き modifier になる       |
 
 サンプルデータはすべて**架空都市「エコノポリス」**のものです(駅10・物件22・地域3・イベント2)。
 
@@ -139,7 +161,7 @@ src/
 ## 今後実装したいこと
 
 - [ ] 目的地システム(目的地到着ボーナス)
-- [ ] 駅マス種別(イベントマス・カードマスなど)による経済イベントの自動発生
+- [x] 駅マス種別(イベント駅)による経済イベントの自動発生(`card` / `bonus` / `tax` などの種別追加・イベント選択の重み付けは今後)
 - [ ] 物件価格の変動(growthPotential / riskLevel を使った年次変動)
 - [ ] トレード UI の拡充(物件同士の交換・複数物件・現金要求)
 - [x] ゲーム終了条件(指定年数経過で総資産1位が勝利)
@@ -158,6 +180,6 @@ src/
 ## 既知の制約
 
 - ローカル(1画面共有)プレイ専用。トレードの受諾/拒否も同じ画面から操作するため、move 呼び出し元の権限検証は行っていない(マルチプレイヤー化の際に stage/playerID 検証を導入予定)
-- 経済イベントは開発用パネルからの手動発火のみ
+- 経済イベントの選択は一様ランダム(地域・駅種別・カテゴリによる重み付けは未実装)。開発用パネルからの手動発火はデバッグ用として併存
 - 物件の売却(銀行への返却)は未実装
 - ゲーム年数は固定(既定3年)。`createInitialState` / boardgame.io の setupData では変更できるが、セットアップ UI は未対応

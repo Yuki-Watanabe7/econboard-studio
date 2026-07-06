@@ -171,6 +171,31 @@ input {
   animation: pulse 1.2s ease-in-out infinite;
 }
 
+/* イベント駅: 破線リング + "!" マーク */
+.station-event-ring {
+  fill: none;
+  stroke: #f0c33c;
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.station-event-mark {
+  fill: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.station-event-mark--legend {
+  font-size: 11px;
+}
+
+.map-legend-label {
+  fill: var(--text);
+  font-size: 12px;
+}
+
 @keyframes pulse {
   0%,
   100% {

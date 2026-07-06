@@ -16,6 +16,14 @@ export type EconomicEventId = string;
 /** 物件カテゴリ。将来はデータ側で自由に追加できるよう string union に留める */
 export type PropertyCategory = 'food' | 'tourism' | 'industry' | 'retail' | 'tech';
 
+/**
+ * 駅マス種別。到着時の効果を決める。
+ * - normal: 到着効果なし
+ * - event: 到着時に経済イベントが1件発生する
+ * 将来 'card' | 'bonus' | 'tax' などを追加する想定(schema.ts の enum も併せて更新する)
+ */
+export type StationType = 'normal' | 'event';
+
 export interface Region {
   id: RegionId;
   name: string;
@@ -25,6 +33,8 @@ export interface Station {
   id: StationId;
   name: string;
   regionId: RegionId;
+  /** 駅マス種別。到着時の効果(経済イベント発生など)を決める */
+  stationType: StationType;
   /** SVG 描画用の論理座標 */
   position: { x: number; y: number };
   /** 接続駅。edges と冗長だが、移動計算とデータ編集の双方で扱いやすいよう保持する */

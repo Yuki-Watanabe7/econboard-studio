@@ -49,6 +49,22 @@ export function MapView({
           onClick={onStationClick}
         />
       ))}
+      {/* 凡例: イベント駅 */}
+      <g className="map-legend" aria-label="凡例">
+        <circle cx={24} cy={500} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
+        <circle cx={24} cy={500} r={11} className="station-event-ring" />
+        <text
+          x={24}
+          y={503}
+          textAnchor="middle"
+          className="station-event-mark station-event-mark--legend"
+        >
+          !
+        </text>
+        <text x={42} y={504} className="map-legend-label">
+          イベント駅(到着で経済イベント発生)
+        </text>
+      </g>
     </svg>
   );
 }

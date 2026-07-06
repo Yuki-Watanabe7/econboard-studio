@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateGameData, economicEventSchema } from '../schema';
 import { sampleEvents, sampleMap, sampleProperties } from '../sampleData';
+import type { Station } from '../types';
 
 /**
  * サンプルデータの整合性テスト。
@@ -42,5 +43,20 @@ describe('サンプルデータの整合性', () => {
     for (const event of sampleEvents) {
       expect(economicEventSchema.safeParse(event).success).toBe(true);
     }
+  });
+
+  it('イベント駅が少なくとも1つある', () => {
+    expect(sampleMap.stations.some((s) => s.stationType === 'event')).toBe(true);
+  });
+
+  it('不正な駅マス種別は validateGameData が検出する', () => {
+    const broken = {
+      ...sampleMap,
+      stations: sampleMap.stations.map((s, i) =>
+        i === 0 ? { ...s, stationType: 'no-such-type' as Station['stationType'] } : s,
+      ),
+    };
+    const problems = validateGameData(broken, sampleProperties);
+    expect(problems.some((p) => p.includes('stationType'))).toBe(true);
   });
 });
