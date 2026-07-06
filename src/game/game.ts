@@ -59,8 +59,9 @@ const buyPropertyMove: Move<GameState> = ({ G }, propertyId: PropertyId) => {
 };
 
 const endTurnMove: Move<GameState> = ({ G, ctx, events }) => {
-  // 移動途中(行き先未選択)ではターンを終了できない
-  if (G.turnStage === 'awaitingDestination') return INVALID_MOVE;
+  // サイコロ前('idle')・移動途中('awaitingDestination')ではターンを終了できない。
+  // 手番は必ず「サイコロ → 移動 → (任意で購入等) → ターン終了」の順に進む(issue #3)。
+  if (G.turnStage !== 'arrived') return INVALID_MOVE;
   const isLastPlayerInRound = ctx.playOrderPos === ctx.numPlayers - 1;
   const result = endPlayerTurn(G, isLastPlayerInRound);
   if (!result.ok) return INVALID_MOVE;
