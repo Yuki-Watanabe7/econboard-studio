@@ -1,6 +1,23 @@
-import type { GameState, PropertyId } from '../game/types';
+import type { GameState, Property, PropertyId } from '../game/types';
 import { calculatePropertyIncome } from '../game/rules/economy';
+import { formatRate } from '../game/rules/propertyValuation';
 import { CATEGORY_LABELS, playerColor } from './constants';
+
+/** 基準価格からの変動表示(年次価格改定の結果)。変動がなければ何も出さない */
+function PriceTrend({ property }: { property: Property }) {
+  if (property.price === property.basePrice) return null;
+  const rate = (property.price - property.basePrice) / property.basePrice;
+  const direction = rate > 0 ? 'up' : 'down';
+  return (
+    <span
+      className={`price-trend price-trend--${direction}`}
+      title={`基準価格 ${property.basePrice.toLocaleString()}G`}
+    >
+      {rate > 0 ? '▲' : '▼'}
+      {formatRate(rate)}
+    </span>
+  );
+}
 
 interface PropertyListProps {
   G: GameState;
@@ -37,8 +54,8 @@ export function PropertyList({ G, currentPlayerId, canBuy, onBuy }: PropertyList
                 </span>
               </div>
               <div className="property-detail">
-                価格 {property.price.toLocaleString()}G / 年間収益 {income.toLocaleString()}G(
-                {Math.round(property.baseYieldRate * 100)}%)
+                価格 {property.price.toLocaleString()}G <PriceTrend property={property} /> /
+                年間収益 {income.toLocaleString()}G({Math.round(property.baseYieldRate * 100)}%)
               </div>
               <div className="property-action">
                 {owner ? (

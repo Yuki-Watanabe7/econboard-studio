@@ -109,7 +109,11 @@ export function chargePlayer(
  * 破産プレイヤーの手番を何もせずに終了する。
  * boardgame.io 層の turn.onBegin から呼ばれ、カレンダー進行(endPlayerTurn)は通常どおり行う。
  */
-export function skipBankruptPlayerTurn(state: GameState, isLastPlayerInRound: boolean): RuleResult {
+export function skipBankruptPlayerTurn(
+  state: GameState,
+  isLastPlayerInRound: boolean,
+  random: () => number,
+): RuleResult {
   const player = findPlayer(state, state.currentPlayerId);
   if (!player) {
     return { ok: false, reason: `プレイヤー ${state.currentPlayerId} が存在しない` };
@@ -123,5 +127,5 @@ export function skipBankruptPlayerTurn(state: GameState, isLastPlayerInRound: bo
     `${player.name} は破産しているため手番をスキップした`,
     player.id,
   );
-  return endPlayerTurn(next, isLastPlayerInRound);
+  return endPlayerTurn(next, isLastPlayerInRound, random);
 }

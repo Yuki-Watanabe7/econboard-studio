@@ -62,17 +62,32 @@ export interface Property {
   stationId: StationId;
   name: string;
   category: PropertyCategory;
-  /** 購入価格(通貨単位: G) */
+  /**
+   * 現在価格(通貨単位: G)。購入価格・収益計算・評価額の基準。
+   * 年次の価格改定(rules/propertyValuation.ts)で変動する。
+   */
   price: number;
+  /**
+   * 基準価格(編集データ由来の初期価格)。ゲーム中は変化しない。
+   * 価格改定の下限(最低価格)と UI の変動表示の基準に使う。
+   * データ編集時は price のみ書き、組み立て時に自動導出する(sampleData.ts)。
+   */
+  basePrice: number;
   /** 年間の基礎収益率(0.10 = 価格の10%/年) */
   baseYieldRate: number;
   ownerPlayerId: PlayerId | null;
-  /** 1(安全)〜3(ハイリスク)。将来のイベント連動用 */
+  /** 1(安全)〜3(ハイリスク)。年次価格改定の振れ幅に効く */
   riskLevel: 1 | 2 | 3;
-  /** 1(低成長)〜3(高成長)。将来の価格変動用 */
+  /** 1(低成長)〜3(高成長)。年次価格改定の期待上昇率に効く */
   growthPotential: 1 | 2 | 3;
   description: string;
 }
+
+/**
+ * 編集対象の物件データ。basePrice は初期 price と常に等しいため手書きさせず、
+ * データ組み立て時(sampleData.ts の buildProperties)に自動導出する。
+ */
+export type PropertySeed = Omit<Property, 'basePrice'>;
 
 export interface PlayerStatusFlags {
   skipNextTurn: boolean;

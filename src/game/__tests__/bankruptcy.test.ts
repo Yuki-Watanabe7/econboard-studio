@@ -213,7 +213,7 @@ describe('破産プレイヤーがいる状態の決算処理', () => {
     let state = bankruptPlayer(setupState(3), '0');
     state = { ...state, currentMonth: 12 };
 
-    const next = advanceMonth(state);
+    const next = advanceMonth(state, () => 0.5);
 
     expect(next.currentYear).toBe(2);
     expect(next.currentMonth).toBe(1);

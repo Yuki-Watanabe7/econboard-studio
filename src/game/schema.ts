@@ -47,6 +47,7 @@ export const propertySchema = z.object({
   name: z.string().min(1),
   category: z.enum(['food', 'tourism', 'industry', 'retail', 'tech']),
   price: z.number().positive(),
+  basePrice: z.number().positive(),
   baseYieldRate: z.number().positive().max(1),
   ownerPlayerId: z.string().nullable(),
   riskLevel: z.union([z.literal(1), z.literal(2), z.literal(3)]),

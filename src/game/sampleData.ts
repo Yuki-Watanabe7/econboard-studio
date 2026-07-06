@@ -1,9 +1,19 @@
-import type { GameMap, Property, RouteEdge, Station } from './types';
+import type { GameMap, Property, PropertySeed, RouteEdge, Station } from './types';
 import { sampleRegions } from './data/regions';
 import { sampleStationSeeds } from './data/stations';
 import { sampleRoutes } from './data/routes';
-import { sampleProperties } from './data/properties';
+import { samplePropertySeeds } from './data/properties';
 import { sampleEvents } from './data/events';
+
+/**
+ * 物件データから Property を組み立てる。
+ * basePrice(基準価格)は初期 price と等しいため手書きさせず、ここで導出する。
+ */
+export function buildProperties(seeds: PropertySeed[]): Property[] {
+  return seeds.map((seed) => ({ ...seed, basePrice: seed.price }));
+}
+
+export const sampleProperties: Property[] = buildProperties(samplePropertySeeds);
 
 /**
  * 駅の connectedStationIds / propertyIds を routes / properties から導出して
@@ -34,4 +44,4 @@ export const sampleMap: GameMap = {
   edges: sampleRoutes,
 };
 
-export { sampleProperties, sampleEvents, sampleRegions, sampleRoutes };
+export { sampleEvents, sampleRegions, sampleRoutes };

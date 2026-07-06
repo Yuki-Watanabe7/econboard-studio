@@ -1,7 +1,10 @@
-import type { Property } from '../types';
+import type { PropertySeed } from '../types';
 
-/** 物件定義。ownerPlayerId は初期状態ですべて null(未所有) */
-export const sampleProperties: Property[] = [
+/**
+ * 物件定義。ownerPlayerId は初期状態ですべて null(未所有)。
+ * basePrice(基準価格)は初期 price から自動導出されるため書かない(sampleData.ts)。
+ */
+export const samplePropertySeeds: PropertySeed[] = [
   // セントラル
   {
     id: 'prop-central-bakery',
