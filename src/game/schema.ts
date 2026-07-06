@@ -15,7 +15,7 @@ export const regionSchema = z.object({
 });
 
 /** 駅マス種別。types.ts の StationType と対応させる(種別追加時は両方を更新) */
-export const stationTypeSchema = z.enum(['normal', 'event']);
+export const stationTypeSchema = z.enum(['normal', 'event', 'cashEvent']);
 
 export const stationSchema = z.object({
   id: z.string().min(1),
@@ -67,6 +67,25 @@ export const economicEventSchema = z.object({
   description: z.string(),
   effects: z.array(economicEffectSchema).min(1),
   durationMonths: z.number().int().positive().nullable(),
+});
+
+/** 所持金イベントの効果。types.ts の CashEventEffect と対応させる(種別追加時は両方を更新) */
+export const cashEventEffectSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('income'), amount: z.number().int().positive() }),
+  z.object({ type: z.literal('payment'), amount: z.number().int().positive() }),
+  z.object({
+    type: z.literal('paymentPerProperty'),
+    amountPerProperty: z.number().int().positive(),
+  }),
+  z.object({ type: z.literal('paymentNetWorthRate'), rate: z.number().positive().max(1) }),
+  z.object({ type: z.literal('incomeToPoorest'), amount: z.number().int().positive() }),
+]);
+
+export const cashEventSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string(),
+  effect: cashEventEffectSchema,
 });
 
 /**

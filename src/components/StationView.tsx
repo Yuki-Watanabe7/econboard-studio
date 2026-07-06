@@ -45,6 +45,14 @@ export function StationView({
           </text>
         </>
       )}
+      {station.stationType === 'cashEvent' && (
+        <>
+          <circle cx={x} cy={y} r={20} className="station-cash-ring" />
+          <text x={x} y={y + 5} textAnchor="middle" className="station-cash-mark">
+            G
+          </text>
+        </>
+      )}
       {isDestination && (
         <>
           <circle cx={x} cy={y} r={24} className="station-destination-ring" />

@@ -196,6 +196,26 @@ input {
   font-size: 11px;
 }
 
+/* 所持金イベント駅: 破線リング + "G" マーク */
+.station-cash-ring {
+  fill: none;
+  stroke: #3fb8af;
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.station-cash-mark {
+  fill: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.station-cash-mark--legend {
+  font-size: 10px;
+}
+
 /* 目的地駅: 実線リング + 旗マーク */
 .station-destination-ring {
   fill: none;
@@ -466,6 +486,10 @@ input {
 
 .log-entry--destination .log-message {
   color: #e0566b;
+}
+
+.log-entry--cashEvent .log-message {
+  color: #3fb8af;
 }
 
 /* --- デバッグ --- */

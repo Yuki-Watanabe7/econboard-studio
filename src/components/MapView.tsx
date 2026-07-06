@@ -52,7 +52,7 @@ export function MapView({
           onClick={onStationClick}
         />
       ))}
-      {/* 凡例: イベント駅・目的地 */}
+      {/* 凡例: イベント駅・所持金イベント駅・目的地 */}
       <g className="map-legend" aria-label="凡例">
         <circle cx={24} cy={500} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
         <circle cx={24} cy={500} r={11} className="station-event-ring" />
@@ -65,15 +65,28 @@ export function MapView({
           !
         </text>
         <text x={42} y={504} className="map-legend-label">
-          イベント駅(到着で経済イベント発生)
+          イベント駅(経済イベント)
         </text>
-        <circle cx={300} cy={500} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
-        <circle cx={300} cy={500} r={11} className="station-destination-ring" />
+        <circle cx={250} cy={500} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
+        <circle cx={250} cy={500} r={11} className="station-cash-ring" />
+        <text
+          x={250}
+          y={503}
+          textAnchor="middle"
+          className="station-cash-mark station-cash-mark--legend"
+        >
+          G
+        </text>
+        <text x={268} y={504} className="map-legend-label">
+          所持金イベント駅(現金の増減)
+        </text>
+        <circle cx={490} cy={500} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
+        <circle cx={490} cy={500} r={11} className="station-destination-ring" />
         <g className="station-destination-flag">
-          <line x1={309} y1={493} x2={309} y2={482} />
-          <polygon points="309,482 318,484.5 309,487" />
+          <line x1={499} y1={493} x2={499} y2={482} />
+          <polygon points="499,482 508,484.5 499,487" />
         </g>
-        <text x={324} y={504} className="map-legend-label">
+        <text x={514} y={504} className="map-legend-label">
           目的地(到着で報酬)
         </text>
       </g>

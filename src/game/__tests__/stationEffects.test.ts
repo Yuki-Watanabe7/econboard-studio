@@ -32,7 +32,7 @@ describe('resolveStationArrival', () => {
   it('通常駅に到着してもイベントは発生しない', () => {
     // riverside は stationType: 'normal'
     const state = arriveAt('riverside');
-    const result = resolveStationArrival(state, '0', sampleEvents, () => 0);
+    const result = resolveStationArrival(state, '0', sampleEvents, [], () => 0);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -43,7 +43,7 @@ describe('resolveStationArrival', () => {
   it('イベント駅に到着すると経済イベントが発生し、modifier とログが追加される', () => {
     // harbor は stationType: 'event'。乱数 0 → sampleEvents[0](ベイサイド好況)
     const state = arriveAt('harbor');
-    const result = resolveStationArrival(state, '0', sampleEvents, () => 0);
+    const result = resolveStationArrival(state, '0', sampleEvents, [], () => 0);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -56,8 +56,8 @@ describe('resolveStationArrival', () => {
 
   it('乱数を固定すると発生イベントを再現できる', () => {
     const state = arriveAt('harbor');
-    const first = resolveStationArrival(state, '0', sampleEvents, () => 0.9999);
-    const second = resolveStationArrival(state, '0', sampleEvents, () => 0.9999);
+    const first = resolveStationArrival(state, '0', sampleEvents, [], () => 0.9999);
+    const second = resolveStationArrival(state, '0', sampleEvents, [], () => 0.9999);
 
     expect(first.ok && second.ok).toBe(true);
     if (!first.ok || !second.ok) return;
@@ -69,7 +69,7 @@ describe('resolveStationArrival', () => {
 
   it('イベントが未登録ならイベント駅でも何も起きない', () => {
     const state = arriveAt('harbor');
-    const result = resolveStationArrival(state, '0', [], () => 0);
+    const result = resolveStationArrival(state, '0', [], [], () => 0);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -77,14 +77,14 @@ describe('resolveStationArrival', () => {
   });
 
   it('存在しないプレイヤーの到着解決は失敗する', () => {
-    const result = resolveStationArrival(setupState(), '9', sampleEvents, () => 0);
+    const result = resolveStationArrival(setupState(), '9', sampleEvents, [], () => 0);
     expect(result.ok).toBe(false);
   });
 
   it('発生した収益率イベントが物件の年間収益に反映される', () => {
     // ベイサイド好況(収益率 1.5 倍)を harbor 到着で発生させる
     const state = arriveAt('harbor');
-    const result = resolveStationArrival(state, '0', sampleEvents, () => 0);
+    const result = resolveStationArrival(state, '0', sampleEvents, [], () => 0);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
@@ -97,7 +97,7 @@ describe('resolveStationArrival', () => {
     // 小売不況(評価額 0.7 倍)を harbor 到着で発生させる
     let state = giveProperty(setupState(), '0', 'prop-harbor-ferry-shop'); // retail / 価格 1300
     state = arriveAt('harbor', state);
-    const result = resolveStationArrival(state, '0', sampleEvents, () => 0.9999);
+    const result = resolveStationArrival(state, '0', sampleEvents, [], () => 0.9999);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 

@@ -15,8 +15,9 @@ import {
   type TradeOfferInput,
 } from './rules/trade';
 import { applyEconomicEvent } from './rules/economy';
+import { applyCashEvent } from './rules/cashEvents';
 import { declareBankruptcy, skipBankruptPlayerTurn } from './rules/bankruptcy';
-import { sampleEvents } from './sampleData';
+import { sampleCashEvents, sampleEvents } from './sampleData';
 
 /**
  * boardgame.io 統合レイヤー。
@@ -53,13 +54,17 @@ const moveTo: Move<GameState> = ({ G, random }, toStationId: StationId) => {
 
   const moved = movePlayer(G, G.currentPlayerId, toStationId);
   if (!moved.ok) return INVALID_MOVE;
-  // 到着効果の解決順: 移動ログ → 目的地到着報酬 → 駅種別効果(経済イベント)
+  // 到着効果の解決順: 移動ログ → 目的地到着報酬 → 駅種別効果(経済/所持金イベント)
   const destination = resolveDestinationArrival(moved.state, G.currentPlayerId, () =>
     random.Number(),
   );
   if (!destination.ok) return INVALID_MOVE;
-  const arrival = resolveStationArrival(destination.state, G.currentPlayerId, sampleEvents, () =>
-    random.Number(),
+  const arrival = resolveStationArrival(
+    destination.state,
+    G.currentPlayerId,
+    sampleEvents,
+    sampleCashEvents,
+    () => random.Number(),
   );
   if (!arrival.ok) return INVALID_MOVE;
   return { ...arrival.state, reachableStationIds: [], turnStage: 'arrived' as const };
@@ -123,6 +128,16 @@ const triggerEconomicEvent: Move<GameState> = ({ G }, eventId: string) => {
   return result.state;
 };
 
+/** 開発用: 任意の所持金イベントを現在手番のプレイヤーに手動発火する(通常の発生は所持金イベント駅到着時 → moveTo) */
+const triggerCashEvent: Move<GameState> = ({ G }, cashEventId: string) => {
+  if (G.gameOver) return INVALID_MOVE;
+  const event = sampleCashEvents.find((e) => e.id === cashEventId);
+  if (!event) return INVALID_MOVE;
+  const result = applyCashEvent(G, G.currentPlayerId, event);
+  if (!result.ok) return INVALID_MOVE;
+  return result.state;
+};
+
 /** 開発用: 指定プレイヤーを強制的に破産させる(将来は支払い系イベントから発生する想定) */
 const forceBankruptcy: Move<GameState> = ({ G }, playerId: PlayerId) => {
   if (G.gameOver) return INVALID_MOVE;
@@ -172,6 +187,7 @@ export const EconBoardGame: Game<GameState> = {
     acceptTradeOffer: acceptTradeOfferMove,
     rejectTradeOffer: rejectTradeOfferMove,
     triggerEconomicEvent,
+    triggerCashEvent,
     forceBankruptcy,
   },
 };

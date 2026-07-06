@@ -92,6 +92,7 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
           <DebugPanel
             G={G}
             onTriggerEvent={(eventId) => moves.triggerEconomicEvent(eventId)}
+            onTriggerCashEvent={(cashEventId) => moves.triggerCashEvent(cashEventId)}
             onForceBankruptcy={(playerId) => moves.forceBankruptcy(playerId)}
           />
         </aside>
