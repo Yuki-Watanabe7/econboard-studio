@@ -1,14 +1,20 @@
 import type { GameState } from '../game/types';
-import { sampleEvents } from '../game/sampleData';
+import { sampleCashEvents, sampleEvents } from '../game/sampleData';
 
 interface DebugPanelProps {
   G: GameState;
   onTriggerEvent: (eventId: string) => void;
+  onTriggerCashEvent: (cashEventId: string) => void;
   onForceBankruptcy: (playerId: string) => void;
 }
 
-/** 開発用パネル: 経済イベント・破産の手動発火と GameState の確認 */
-export function DebugPanel({ G, onTriggerEvent, onForceBankruptcy }: DebugPanelProps) {
+/** 開発用パネル: 経済イベント・所持金イベント・破産の手動発火と GameState の確認 */
+export function DebugPanel({
+  G,
+  onTriggerEvent,
+  onTriggerCashEvent,
+  onForceBankruptcy,
+}: DebugPanelProps) {
   // map はサイズが大きく不変なので JSON 表示からは省く
   const rest = { ...G, map: `(${G.map.name} — 表示省略)` };
 
@@ -34,7 +40,22 @@ export function DebugPanel({ G, onTriggerEvent, onForceBankruptcy }: DebugPanelP
         )}
       </div>
       <div className="debug-events">
-        <p className="muted">強制破産(将来は支払い系イベントから発生させる):</p>
+        <p className="muted">所持金イベントを現在手番のプレイヤーに手動発火:</p>
+        <div className="button-row">
+          {sampleCashEvents.map((event) => (
+            <button
+              key={event.id}
+              onClick={() => onTriggerCashEvent(event.id)}
+              title={event.description}
+              disabled={G.gameOver}
+            >
+              {event.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="debug-events">
+        <p className="muted">強制破産(支払い系の所持金イベントからも発生する):</p>
         <div className="button-row">
           {G.players.map((player) => (
             <button

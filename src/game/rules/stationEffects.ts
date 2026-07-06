@@ -1,5 +1,6 @@
-import type { EconomicEvent, GameState, PlayerId, RuleResult } from '../types';
+import type { CashEvent, EconomicEvent, GameState, PlayerId, RuleResult } from '../types';
 import { applyEconomicEvent } from './economy';
+import { applyCashEvent, selectCashEvent } from './cashEvents';
 import { findPlayer, findStation } from './helpers';
 
 /**
@@ -29,12 +30,14 @@ export function selectEconomicEvent(
 /**
  * プレイヤーの現在駅の種別に応じた到着効果を解決する。
  * - normal: 何もしない
- * - event: 登録済みイベントから1件を選んで適用する(未登録なら何もしない)
+ * - event: 登録済み経済イベントから1件を選んで適用する(未登録なら何もしない)
+ * - cashEvent: 登録済み所持金イベントから1件を選んで到着プレイヤーに適用する(未登録なら何もしない)
  */
 export function resolveStationArrival(
   state: GameState,
   playerId: PlayerId,
   events: EconomicEvent[],
+  cashEvents: CashEvent[],
   random: () => number,
 ): RuleResult {
   const player = findPlayer(state, playerId);
@@ -46,13 +49,21 @@ export function resolveStationArrival(
     return { ok: false, reason: `駅 ${player.currentStationId} が存在しない` };
   }
 
-  if (station.stationType !== 'event') {
-    return { ok: true, state };
+  if (station.stationType === 'event') {
+    const event = selectEconomicEvent(events, random);
+    if (!event) {
+      return { ok: true, state };
+    }
+    return applyEconomicEvent(state, event);
   }
 
-  const event = selectEconomicEvent(events, random);
-  if (!event) {
-    return { ok: true, state };
+  if (station.stationType === 'cashEvent') {
+    const event = selectCashEvent(cashEvents, random);
+    if (!event) {
+      return { ok: true, state };
+    }
+    return applyCashEvent(state, playerId, event);
   }
-  return applyEconomicEvent(state, event);
+
+  return { ok: true, state };
 }

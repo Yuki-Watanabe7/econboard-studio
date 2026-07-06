@@ -12,6 +12,7 @@ export type StationId = string;
 export type PropertyId = string;
 export type PlayerId = string;
 export type EconomicEventId = string;
+export type CashEventId = string;
 
 /** 物件カテゴリ。将来はデータ側で自由に追加できるよう string union に留める */
 export type PropertyCategory = 'food' | 'tourism' | 'industry' | 'retail' | 'tech';
@@ -20,9 +21,10 @@ export type PropertyCategory = 'food' | 'tourism' | 'industry' | 'retail' | 'tec
  * 駅マス種別。到着時の効果を決める。
  * - normal: 到着効果なし
  * - event: 到着時に経済イベントが1件発生する
- * 将来 'card' | 'bonus' | 'tax' などを追加する想定(schema.ts の enum も併せて更新する)
+ * - cashEvent: 到着時に所持金イベント(現金の増減)が1件発生する
+ * 将来 'card' | 'bonus' などを追加する想定(schema.ts の enum も併せて更新する)
  */
-export type StationType = 'normal' | 'event';
+export type StationType = 'normal' | 'event' | 'cashEvent';
 
 export interface Region {
   id: RegionId;
@@ -163,8 +165,34 @@ export interface EconomicState {
   activeModifiers: EconomicModifier[];
 }
 
+/**
+ * 所持金イベントの効果。MVP では1イベント = 単一効果。
+ * 支払い系(payment*)は既存の支払い・破産処理(rules/bankruptcy.ts の chargePlayer)を
+ * 再利用して解決する。効果種別を追加したら schema.ts の cashEventEffectSchema と
+ * rules/cashEvents.ts の適用処理を併せて更新する。
+ */
+export type CashEventEffect =
+  /** 到着プレイヤーへの固定額の収入(臨時収入など) */
+  | { type: 'income'; amount: number }
+  /** 到着プレイヤーの固定額の支払い(税・罰金など) */
+  | { type: 'payment'; amount: number }
+  /** 到着プレイヤーの保有物件数に比例した支払い(維持費など) */
+  | { type: 'paymentPerProperty'; amountPerProperty: number }
+  /** 到着プレイヤーの総資産に比例した支払い(資産税など)。rate は 0〜1 の割合 */
+  | { type: 'paymentNetWorthRate'; rate: number }
+  /** 現金が最も少ない(破産していない)プレイヤーへの収入(補助金など) */
+  | { type: 'incomeToPoorest'; amount: number };
+
+/** 編集可能な所持金イベント定義(データ) */
+export interface CashEvent {
+  id: CashEventId;
+  name: string;
+  description: string;
+  effect: CashEventEffect;
+}
+
 export type GameLogType =
-  'system' | 'move' | 'purchase' | 'settlement' | 'trade' | 'economy' | 'destination';
+  'system' | 'move' | 'purchase' | 'settlement' | 'trade' | 'economy' | 'destination' | 'cashEvent';
 
 export interface GameLogEntry {
   id: number;

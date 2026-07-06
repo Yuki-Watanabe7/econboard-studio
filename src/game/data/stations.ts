@@ -7,8 +7,9 @@ import type { Station } from '../types';
  * sampleData.ts の組み立て時に routes / properties から自動導出する。
  * (単一情報源を routes / properties 側に置くことで、編集時の不整合を防ぐ)
  *
- * stationType はマス種別。'event' の駅に到着すると経済イベントが自動発生する
- * (rules/stationEffects.ts)。種別を編集したら __tests__/data.test.ts が安全網になる。
+ * stationType はマス種別。'event' の駅に到着すると経済イベントが、'cashEvent' の駅に
+ * 到着すると所持金イベント(現金の増減)が自動発生する(rules/stationEffects.ts)。
+ * 種別を編集したら __tests__/data.test.ts が安全網になる。
  */
 type StationSeed = Omit<Station, 'connectedStationIds' | 'propertyIds'>;
 
@@ -38,7 +39,7 @@ export const sampleStationSeeds: StationSeed[] = [
     id: 'old-town',
     name: '旧市街',
     regionId: 'bayside',
-    stationType: 'normal',
+    stationType: 'cashEvent',
     position: { x: 170, y: 380 },
   },
   {
@@ -80,7 +81,7 @@ export const sampleStationSeeds: StationSeed[] = [
     id: 'hot-spring',
     name: '温泉郷',
     regionId: 'highland',
-    stationType: 'normal',
+    stationType: 'cashEvent',
     position: { x: 730, y: 210 },
   },
 ];
