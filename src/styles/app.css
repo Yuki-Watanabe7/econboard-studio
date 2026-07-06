@@ -1,0 +1,358 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f1420;
+  --panel-bg: #1c2333;
+  --panel-border: #2c3550;
+  --text: #e4e8f2;
+  --text-muted: #8b93a8;
+  --accent: #5b8def;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    'Hiragino Sans',
+    'Noto Sans JP',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+h1 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+h2 {
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+  color: var(--accent);
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+button:disabled {
+  background: #3a4258;
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+select,
+input {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* --- セットアップ画面 --- */
+.setup-screen {
+  max-width: 480px;
+  margin: 15vh auto;
+  text-align: center;
+}
+
+.setup-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* --- レイアウト --- */
+.app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 12px 16px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.turn-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.current-player {
+  font-weight: bold;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.board-area,
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+/* --- マップ --- */
+.map-view {
+  width: 100%;
+  height: auto;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.route-edge {
+  stroke: #4a5878;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.station-name {
+  fill: var(--text);
+  font-size: 13px;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 3px;
+}
+
+.station--reachable {
+  cursor: pointer;
+}
+
+.station-halo {
+  fill: rgba(91, 141, 239, 0.35);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* --- コントロール --- */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dice-result {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.hint {
+  color: var(--accent);
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* --- プレイヤー --- */
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.player-row--active {
+  border-color: var(--accent);
+  background: rgba(91, 141, 239, 0.1);
+}
+
+.player-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  align-self: center;
+}
+
+.player-name {
+  font-weight: bold;
+}
+
+.player-station {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.player-stats {
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+/* --- 物件 --- */
+.property-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.property-row {
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.property-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.property-name {
+  font-weight: bold;
+}
+
+.category-badge {
+  font-size: 0.75rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 0 8px;
+  color: var(--text-muted);
+}
+
+.property-detail {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.owner-tag {
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+/* --- トレード --- */
+.trade-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trade-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+/* --- ログ --- */
+.game-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.log-entry {
+  font-size: 0.85rem;
+  display: flex;
+  gap: 8px;
+}
+
+.log-time {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.log-entry--economy .log-message {
+  color: #d8a13a;
+}
+
+.log-entry--settlement .log-message {
+  color: #4caf7d;
+}
+
+/* --- デバッグ --- */
+.panel--debug details {
+  margin-top: 8px;
+}
+
+.debug-json {
+  max-height: 320px;
+  overflow: auto;
+  font-size: 0.75rem;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px;
+}
