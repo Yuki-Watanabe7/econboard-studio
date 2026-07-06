@@ -4,6 +4,7 @@ import type { GameState, PlayerId, PropertyId, StationId } from './types';
 import { createInitialState, type InitialStateOptions } from './initialState';
 import { addLog, findPlayer } from './rules/helpers';
 import { getReachableStations, movePlayer, rollDice } from './rules/movement';
+import { resolveStationArrival } from './rules/stationEffects';
 import { buyProperty } from './rules/property';
 import { endPlayerTurn } from './rules/settlement';
 import {
@@ -44,14 +45,19 @@ const rollAndMove: Move<GameState> = ({ G, random }) => {
   return next;
 };
 
-const moveTo: Move<GameState> = ({ G }, toStationId: StationId) => {
+const moveTo: Move<GameState> = ({ G, random }, toStationId: StationId) => {
   if (G.gameOver) return INVALID_MOVE;
   if (G.turnStage !== 'awaitingDestination') return INVALID_MOVE;
   if (!G.reachableStationIds.includes(toStationId)) return INVALID_MOVE;
 
-  const result = movePlayer(G, G.currentPlayerId, toStationId);
-  if (!result.ok) return INVALID_MOVE;
-  return { ...result.state, reachableStationIds: [], turnStage: 'arrived' as const };
+  const moved = movePlayer(G, G.currentPlayerId, toStationId);
+  if (!moved.ok) return INVALID_MOVE;
+  // 到着駅の種別に応じた効果(イベント駅なら経済イベントが自動発生する)
+  const arrival = resolveStationArrival(moved.state, G.currentPlayerId, sampleEvents, () =>
+    random.Number(),
+  );
+  if (!arrival.ok) return INVALID_MOVE;
+  return { ...arrival.state, reachableStationIds: [], turnStage: 'arrived' as const };
 };
 
 const buyPropertyMove: Move<GameState> = ({ G }, propertyId: PropertyId) => {
@@ -101,7 +107,7 @@ const rejectTradeOfferMove: Move<GameState> = ({ G }, offerId: string) => {
   return result.state;
 };
 
-/** 開発用: 固定イベントを手動発火する(将来は駅マスやカードから発火する想定) */
+/** 開発用: 任意のイベントを手動発火する(通常のゲーム内発生はイベント駅到着時 → moveTo) */
 const triggerEconomicEvent: Move<GameState> = ({ G }, eventId: string) => {
   if (G.gameOver) return INVALID_MOVE;
   const event = sampleEvents.find((e) => e.id === eventId);

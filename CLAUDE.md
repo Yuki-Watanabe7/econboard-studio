@@ -46,5 +46,5 @@ data/ (編集対象データ) → rules/ (純粋関数) → game.ts (boardgame.i
 ## 現状の制約(意図的な設計)
 
 - ローカル(ホットシート)専用。トレードの受諾/拒否も同一画面から操作するため、move 呼び出し元の playerID 権限検証は行っていない。マルチプレイヤー化の際に stage / playerID 検証を導入する予定。
-- 経済イベントは DebugPanel からの手動発火のみ(`triggerEconomicEvent` move)。
+- 経済イベントはイベント駅(`stationType: 'event'`)到着時に自動発生する(`rules/stationEffects.ts` の `resolveStationArrival`、選択は一様ランダム)。DebugPanel からの手動発火(`triggerEconomicEvent` move)はデバッグ用として併存。
 - テストは `environment: 'node'` で動く(DOM 不要のルールテストが中心)。UI テストを追加する場合は jsdom の導入が必要。

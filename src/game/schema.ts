@@ -14,10 +14,14 @@ export const regionSchema = z.object({
   name: z.string().min(1),
 });
 
+/** 駅マス種別。types.ts の StationType と対応させる(種別追加時は両方を更新) */
+export const stationTypeSchema = z.enum(['normal', 'event']);
+
 export const stationSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   regionId: z.string().min(1),
+  stationType: stationTypeSchema,
   position: z.object({ x: z.number(), y: z.number() }),
   connectedStationIds: z.array(z.string()),
   propertyIds: z.array(z.string()),

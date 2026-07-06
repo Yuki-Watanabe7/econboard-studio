@@ -94,6 +94,36 @@ describe('boardgame.io 統合', () => {
     expect(G.properties.find((p) => p.id === propertyHere!.id)?.ownerPlayerId).toBe('0');
   });
 
+  it('moveTo でイベント駅に到着すると経済イベントが自動発生する', () => {
+    const client = createClient(2);
+
+    // 固定シードでイベント駅への到着が起きるまで手番を進める
+    let eventStationVisits = 0;
+    let guard = 0;
+    while (eventStationVisits === 0 && guard < 100) {
+      client.moves.rollAndMove();
+      let G = client.getState()!.G;
+      // 到達可能ならイベント駅を優先して選ぶ
+      const stationById = new Map(G.map.stations.map((s) => [s.id, s]));
+      const dest =
+        G.reachableStationIds.find((id) => stationById.get(id)?.stationType === 'event') ??
+        G.reachableStationIds[0];
+      client.moves.moveTo(dest);
+      G = client.getState()!.G;
+
+      if (stationById.get(dest)?.stationType === 'event') {
+        eventStationVisits += 1;
+        // 到着直後に経済イベントのログと modifier が追加されている
+        expect(G.economicState.activeModifiers.length).toBeGreaterThan(0);
+        expect(G.logs.at(-1)?.type).toBe('economy');
+        expect(G.logs.at(-1)?.message).toContain('経済イベント発生');
+      }
+      client.moves.endTurn();
+      guard += 1;
+    }
+    expect(eventStationVisits).toBeGreaterThan(0);
+  });
+
   it('指定年数の最終決算後にゲーム終了し、以降の move は無効になる', () => {
     const client = createClient(2);
 

@@ -35,6 +35,14 @@ export function StationView({
         stroke={isCurrentPlayerHere ? '#ffffff' : '#1c2333'}
         strokeWidth={isCurrentPlayerHere ? 3 : 1.5}
       />
+      {station.stationType === 'event' && (
+        <>
+          <circle cx={x} cy={y} r={20} className="station-event-ring" />
+          <text x={x} y={y + 5} textAnchor="middle" className="station-event-mark">
+            !
+          </text>
+        </>
+      )}
       <text x={x} y={y + 34} textAnchor="middle" className="station-name">
         {station.name}
       </text>
