@@ -5,6 +5,7 @@ import { createInitialState, type InitialStateOptions } from './initialState';
 import { addLog, findPlayer } from './rules/helpers';
 import { getReachableStations, movePlayer, rollDice } from './rules/movement';
 import { resolveStationArrival } from './rules/stationEffects';
+import { resolveDestinationArrival } from './rules/destination';
 import { buyProperty } from './rules/property';
 import { endPlayerTurn } from './rules/settlement';
 import {
@@ -52,8 +53,12 @@ const moveTo: Move<GameState> = ({ G, random }, toStationId: StationId) => {
 
   const moved = movePlayer(G, G.currentPlayerId, toStationId);
   if (!moved.ok) return INVALID_MOVE;
-  // 到着駅の種別に応じた効果(イベント駅なら経済イベントが自動発生する)
-  const arrival = resolveStationArrival(moved.state, G.currentPlayerId, sampleEvents, () =>
+  // 到着効果の解決順: 移動ログ → 目的地到着報酬 → 駅種別効果(経済イベント)
+  const destination = resolveDestinationArrival(moved.state, G.currentPlayerId, () =>
+    random.Number(),
+  );
+  if (!destination.ok) return INVALID_MOVE;
+  const arrival = resolveStationArrival(destination.state, G.currentPlayerId, sampleEvents, () =>
     random.Number(),
   );
   if (!arrival.ok) return INVALID_MOVE;
@@ -130,8 +135,9 @@ export const EconBoardGame: Game<GameState> = {
   name: 'econboard',
 
   // setupData で gameLengthYears 等を注入できる(将来のセットアップ UI 用)
-  setup: ({ ctx }, setupData?: InitialStateOptions) =>
-    createInitialState(ctx.numPlayers, setupData),
+  // 乱数は最初の目的地の抽選に使う
+  setup: ({ ctx, random }, setupData?: InitialStateOptions) =>
+    createInitialState(ctx.numPlayers, setupData, () => random.Number()),
 
   minPlayers: 2,
   maxPlayers: 4,

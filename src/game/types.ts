@@ -163,7 +163,8 @@ export interface EconomicState {
   activeModifiers: EconomicModifier[];
 }
 
-export type GameLogType = 'system' | 'move' | 'purchase' | 'settlement' | 'trade' | 'economy';
+export type GameLogType =
+  'system' | 'move' | 'purchase' | 'settlement' | 'trade' | 'economy' | 'destination';
 
 export interface GameLogEntry {
   id: number;
@@ -199,6 +200,11 @@ export interface GameState {
   logs: GameLogEntry[];
   pendingTradeOffer: TradeOffer | null;
   economicState: EconomicState;
+  /**
+   * 現在の目的地駅(全プレイヤー共通)。到着したプレイヤーは報酬を得て、
+   * 直前と異なる駅から次の目的地が抽選される(rules/destination.ts)
+   */
+  currentDestinationStationId: StationId;
   /** 直近のサイコロの出目(手番開始時は null) */
   lastDiceRoll: number | null;
   /** 出目確定後に選択可能な到達先(awaitingDestination の間のみ有効) */

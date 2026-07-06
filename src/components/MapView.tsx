@@ -6,6 +6,7 @@ interface MapViewProps {
   players: Player[];
   currentPlayerId: string;
   reachableStationIds: StationId[];
+  destinationStationId: StationId;
   onStationClick: (stationId: StationId) => void;
 }
 
@@ -15,6 +16,7 @@ export function MapView({
   players,
   currentPlayerId,
   reachableStationIds,
+  destinationStationId,
   onStationClick,
 }: MapViewProps) {
   const stationById = new Map(map.stations.map((s) => [s.id, s]));
@@ -46,10 +48,11 @@ export function MapView({
           playersHere={players.filter((p) => p.currentStationId === station.id)}
           isReachable={reachableStationIds.includes(station.id)}
           isCurrentPlayerHere={currentPlayer?.currentStationId === station.id}
+          isDestination={destinationStationId === station.id}
           onClick={onStationClick}
         />
       ))}
-      {/* 凡例: イベント駅 */}
+      {/* 凡例: イベント駅・目的地 */}
       <g className="map-legend" aria-label="凡例">
         <circle cx={24} cy={500} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
         <circle cx={24} cy={500} r={11} className="station-event-ring" />
@@ -63,6 +66,15 @@ export function MapView({
         </text>
         <text x={42} y={504} className="map-legend-label">
           イベント駅(到着で経済イベント発生)
+        </text>
+        <circle cx={300} cy={500} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
+        <circle cx={300} cy={500} r={11} className="station-destination-ring" />
+        <g className="station-destination-flag">
+          <line x1={309} y1={493} x2={309} y2={482} />
+          <polygon points="309,482 318,484.5 309,487" />
+        </g>
+        <text x={324} y={504} className="map-legend-label">
+          目的地(到着で報酬)
         </text>
       </g>
     </svg>

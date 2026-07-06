@@ -111,6 +111,11 @@ input {
   font-weight: bold;
 }
 
+.destination-label {
+  color: #e0566b;
+  font-weight: bold;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
@@ -189,6 +194,28 @@ input {
 
 .station-event-mark--legend {
   font-size: 11px;
+}
+
+/* 目的地駅: 実線リング + 旗マーク */
+.station-destination-ring {
+  fill: none;
+  stroke: #e0566b;
+  stroke-width: 2.5;
+  pointer-events: none;
+}
+
+.station-destination-flag {
+  pointer-events: none;
+}
+
+.station-destination-flag line {
+  stroke: #e0566b;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.station-destination-flag polygon {
+  fill: #e0566b;
 }
 
 .map-legend-label {
@@ -435,6 +462,10 @@ input {
 
 .log-entry--settlement .log-message {
   color: #4caf7d;
+}
+
+.log-entry--destination .log-message {
+  color: #e0566b;
 }
 
 /* --- デバッグ --- */

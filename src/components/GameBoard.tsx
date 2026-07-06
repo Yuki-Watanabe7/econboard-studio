@@ -16,6 +16,7 @@ import { playerColor } from './constants';
 export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
   const currentPlayerId = ctx.currentPlayer;
   const currentPlayer = G.players.find((p) => p.id === currentPlayerId);
+  const destinationStation = G.map.stations.find((s) => s.id === G.currentDestinationStationId);
 
   return (
     <div className="app">
@@ -26,6 +27,7 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
             {G.currentYear}年{G.currentMonth}月
           </span>
           <span>ターン {G.turnNumber}</span>
+          <span className="destination-label">⚑ 目的地: {destinationStation?.name}</span>
           {G.gameOver ? (
             <span className="current-player">ゲーム終了</span>
           ) : (
@@ -44,6 +46,7 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
             players={G.players.filter((p) => !p.status.bankrupt)}
             currentPlayerId={currentPlayerId}
             reachableStationIds={G.turnStage === 'awaitingDestination' ? G.reachableStationIds : []}
+            destinationStationId={G.currentDestinationStationId}
             onStationClick={(stationId) => moves.moveTo(stationId)}
           />
 
