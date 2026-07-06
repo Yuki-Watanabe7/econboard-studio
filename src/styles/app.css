@@ -204,6 +204,48 @@ input {
   flex-wrap: wrap;
 }
 
+/* --- ゲーム終了 --- */
+.panel--game-over {
+  border-color: #d8a13a;
+}
+
+.panel--game-over h2 {
+  color: #d8a13a;
+}
+
+.winner-line {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.final-ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.final-ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.final-rank {
+  font-weight: bold;
+  min-width: 2.5em;
+}
+
+.final-net-worth {
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
 /* --- プレイヤー --- */
 .player-list {
   list-style: none;

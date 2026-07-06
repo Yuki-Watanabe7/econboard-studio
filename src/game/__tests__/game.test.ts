@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Client } from 'boardgame.io/client';
 import { EconBoardGame } from '../game';
+import { DEFAULT_GAME_LENGTH_YEARS } from '../initialState';
 import type { GameState } from '../types';
 
 /**
@@ -91,5 +92,37 @@ describe('boardgame.io 統合', () => {
     client.moves.buyProperty(propertyHere!.id);
     G = client.getState()!.G;
     expect(G.properties.find((p) => p.id === propertyHere!.id)?.ownerPlayerId).toBe('0');
+  });
+
+  it('指定年数の最終決算後にゲーム終了し、以降の move は無効になる', () => {
+    const client = createClient(2);
+
+    // ゲーム終了まで「サイコロ → 移動 → ターン終了」を繰り返す
+    // (1年目4月開始 → 3年目12月まで 33ヶ月 × 2人 = 66手番)
+    let guard = 0;
+    while (!client.getState()!.G.gameOver && guard < 200) {
+      client.moves.rollAndMove();
+      const G = client.getState()!.G;
+      client.moves.moveTo(G.reachableStationIds[0]);
+      client.moves.endTurn();
+      guard += 1;
+    }
+
+    const G = client.getState()!.G;
+    expect(G.gameOver).toBe(true);
+    expect(G.currentYear).toBe(DEFAULT_GAME_LENGTH_YEARS);
+    expect(G.currentMonth).toBe(12);
+    expect(G.finalRanking).toHaveLength(2);
+    expect(G.winnerPlayerIds.length).toBeGreaterThanOrEqual(1);
+    // ランキングは総資産降順
+    expect(G.finalRanking[0].netWorth).toBeGreaterThanOrEqual(G.finalRanking[1].netWorth);
+
+    // ゲーム終了後の move はすべて無効(状態が変化しない)
+    const before = client.getState()!.G;
+    client.moves.rollAndMove();
+    client.moves.endTurn();
+    client.moves.buyProperty(before.properties[0].id);
+    client.moves.triggerEconomicEvent('ev-bayside-boom');
+    expect(client.getState()!.G).toEqual(before);
   });
 });

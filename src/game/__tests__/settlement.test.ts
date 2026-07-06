@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { advanceMonth, calculateNetWorth, settleMonth, settleYear } from '../rules/settlement';
+import {
+  advanceMonth,
+  buildFinalRanking,
+  calculateNetWorth,
+  settleMonth,
+  settleYear,
+} from '../rules/settlement';
 import { applyEconomicEvent, calculatePropertyIncome } from '../rules/economy';
 import { INITIAL_CASH } from '../initialState';
 import { sampleEvents } from '../sampleData';
@@ -109,5 +115,77 @@ describe('advanceMonth', () => {
     expect(next.currentMonth).toBe(1);
     const p0 = next.players.find((p) => p.id === '0');
     expect(p0?.cash).toBe(INITIAL_CASH + BAKERY_INCOME); // 年次収益が支払われている
+  });
+});
+
+describe('ゲーム終了(advanceMonth / buildFinalRanking)', () => {
+  it('最終年より前の12月ではゲーム終了しない', () => {
+    let state = setupState(); // gameLengthYears は既定の3年
+    state = { ...state, currentYear: 2, currentMonth: 12 };
+
+    const next = advanceMonth(state);
+
+    expect(next.gameOver).toBe(false);
+    expect(next.currentYear).toBe(3);
+    expect(next.currentMonth).toBe(1);
+    expect(next.finalRanking).toHaveLength(0);
+  });
+
+  it('最終年の12月終了時に年次決算を経てゲーム終了する', () => {
+    let state = setupState();
+    state = giveProperty(state, '0', BAKERY); // 価格 1200G / 年間収益 144G
+    state = { ...state, currentYear: state.gameLengthYears, currentMonth: 12 };
+
+    const next = advanceMonth(state);
+
+    expect(next.gameOver).toBe(true);
+    // 年は繰り上がらず最終年の12月のまま
+    expect(next.currentYear).toBe(state.gameLengthYears);
+    expect(next.currentMonth).toBe(12);
+
+    // 年次決算(収益 144G)が支払われたうえで総資産が再計算されている
+    const p0Entry = next.finalRanking.find((e) => e.playerId === '0');
+    expect(p0Entry?.netWorth).toBe(INITIAL_CASH + BAKERY_INCOME + 1200);
+  });
+
+  it('総資産降順のランキングが確定し、1位が勝者になる', () => {
+    let state = setupState(3);
+    state = giveProperty(state, '1', BAKERY); // p1 だけ物件あり → 総資産・収益とも最大
+    state = { ...state, currentYear: state.gameLengthYears, currentMonth: 12 };
+
+    const next = advanceMonth(state);
+
+    expect(next.winnerPlayerIds).toEqual(['1']);
+    expect(next.finalRanking.map((e) => e.playerId)).toEqual(['1', '0', '2']);
+    // p0 と p2 は同額(初期現金のまま)なので同順位
+    expect(next.finalRanking.map((e) => e.rank)).toEqual([1, 2, 2]);
+  });
+
+  it('同額1位の場合は複数勝者(同率優勝)になる', () => {
+    let state = setupState(2); // 両者とも初期現金のみで同額
+    state = { ...state, currentYear: state.gameLengthYears, currentMonth: 12 };
+
+    const next = advanceMonth(state);
+
+    expect(next.gameOver).toBe(true);
+    expect(next.winnerPlayerIds).toHaveLength(2);
+    expect(next.winnerPlayerIds).toContain('0');
+    expect(next.winnerPlayerIds).toContain('1');
+    expect(next.finalRanking.map((e) => e.rank)).toEqual([1, 1]);
+  });
+
+  it('buildFinalRanking は同額を同順位にし、次の順位を人数分飛ばす(1,1,3)', () => {
+    let state = setupState(3);
+    state = {
+      ...state,
+      players: state.players.map((p) =>
+        p.id === '2' ? { ...p, netWorth: 5000 } : { ...p, netWorth: 12000 },
+      ),
+    };
+
+    const ranking = buildFinalRanking(state);
+
+    expect(ranking.map((e) => e.rank)).toEqual([1, 1, 3]);
+    expect(ranking[2].playerId).toBe('2');
   });
 });

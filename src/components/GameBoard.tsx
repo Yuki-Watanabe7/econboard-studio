@@ -6,6 +6,7 @@ import { PropertyList } from './PropertyList';
 import { GameLog } from './GameLog';
 import { TradePanel } from './TradePanel';
 import { DebugPanel } from './DebugPanel';
+import { GameOverPanel } from './GameOverPanel';
 import { playerColor } from './constants';
 
 /**
@@ -25,14 +26,19 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
             {G.currentYear}年{G.currentMonth}月
           </span>
           <span>ターン {G.turnNumber}</span>
-          <span className="current-player" style={{ color: playerColor(currentPlayerId) }}>
-            ● {currentPlayer?.name} の手番
-          </span>
+          {G.gameOver ? (
+            <span className="current-player">ゲーム終了</span>
+          ) : (
+            <span className="current-player" style={{ color: playerColor(currentPlayerId) }}>
+              ● {currentPlayer?.name} の手番
+            </span>
+          )}
         </div>
       </header>
 
       <div className="layout">
         <main className="board-area">
+          {G.gameOver && <GameOverPanel G={G} />}
           <MapView
             map={G.map}
             players={G.players}
@@ -42,14 +48,20 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
           />
 
           <div className="controls panel">
-            <button onClick={() => moves.rollAndMove()} disabled={G.turnStage !== 'idle'}>
+            <button
+              onClick={() => moves.rollAndMove()}
+              disabled={G.gameOver || G.turnStage !== 'idle'}
+            >
               サイコロを振る
             </button>
             {G.lastDiceRoll !== null && <span className="dice-result">出目: {G.lastDiceRoll}</span>}
             {G.turnStage === 'awaitingDestination' && (
               <span className="hint">光っている駅をクリックして移動先を選ぶ</span>
             )}
-            <button onClick={() => moves.endTurn()} disabled={G.turnStage !== 'arrived'}>
+            <button
+              onClick={() => moves.endTurn()}
+              disabled={G.gameOver || G.turnStage !== 'arrived'}
+            >
               ターン終了
             </button>
           </div>
@@ -57,20 +69,22 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
           <PropertyList
             G={G}
             currentPlayerId={currentPlayerId}
-            canBuy={G.turnStage === 'arrived'}
+            canBuy={!G.gameOver && G.turnStage === 'arrived'}
             onBuy={(propertyId) => moves.buyProperty(propertyId)}
           />
         </main>
 
         <aside className="sidebar">
           <PlayerPanel G={G} currentPlayerId={currentPlayerId} />
-          <TradePanel
-            G={G}
-            currentPlayerId={currentPlayerId}
-            onCreateOffer={(input) => moves.createTradeOffer(input)}
-            onAccept={(offerId) => moves.acceptTradeOffer(offerId)}
-            onReject={(offerId) => moves.rejectTradeOffer(offerId)}
-          />
+          {!G.gameOver && (
+            <TradePanel
+              G={G}
+              currentPlayerId={currentPlayerId}
+              onCreateOffer={(input) => moves.createTradeOffer(input)}
+              onAccept={(offerId) => moves.acceptTradeOffer(offerId)}
+              onReject={(offerId) => moves.rejectTradeOffer(offerId)}
+            />
+          )}
           <GameLog logs={G.logs} />
           <DebugPanel G={G} onTriggerEvent={(eventId) => moves.triggerEconomicEvent(eventId)} />
         </aside>

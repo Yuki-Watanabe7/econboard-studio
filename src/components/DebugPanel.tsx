@@ -22,6 +22,7 @@ export function DebugPanel({ G, onTriggerEvent }: DebugPanelProps) {
               key={event.id}
               onClick={() => onTriggerEvent(event.id)}
               title={event.description}
+              disabled={G.gameOver}
             >
               {event.name}
             </button>

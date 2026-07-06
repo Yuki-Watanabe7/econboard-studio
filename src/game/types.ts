@@ -153,6 +153,14 @@ export interface GameLogEntry {
 /** 手番内の進行状態 */
 export type TurnStage = 'idle' | 'awaitingDestination' | 'arrived';
 
+/** ゲーム終了時の最終順位1件分 */
+export interface FinalRankingEntry {
+  playerId: PlayerId;
+  netWorth: number;
+  /** 1始まり。同額は同順位とし、次の順位は人数分飛ぶ(1,1,3 形式) */
+  rank: number;
+}
+
 export interface GameState {
   players: Player[];
   currentPlayerId: PlayerId;
@@ -173,6 +181,14 @@ export interface GameState {
   nextLogId: number;
   /** トレードオファー ID 採番用カウンタ */
   nextTradeOfferId: number;
+  /** ゲームの長さ(年数)。この年の年次決算をもって終了する */
+  gameLengthYears: number;
+  /** 最終年の年次決算後に true。以降すべての move は無効 */
+  gameOver: boolean;
+  /** 同額1位を許容するため配列で持つ(gameOver までは空) */
+  winnerPlayerIds: PlayerId[];
+  /** 総資産降順の最終順位(gameOver までは空) */
+  finalRanking: FinalRankingEntry[];
 }
 
 /**

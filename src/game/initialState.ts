@@ -3,12 +3,23 @@ import { sampleMap, sampleProperties } from './sampleData';
 
 export const INITIAL_CASH = 10000;
 export const START_STATION_ID = 'central';
+/** 既定のゲーム年数。この年の年次決算をもってゲーム終了となる */
+export const DEFAULT_GAME_LENGTH_YEARS = 3;
+
+/** 初期状態のオプション。将来 UI(セットアップ画面)から注入する想定 */
+export interface InitialStateOptions {
+  gameLengthYears?: number;
+}
 
 /**
  * 初期状態を生成する。
  * プレイヤー ID は boardgame.io の playerID('0', '1', ...)と一致させる。
  */
-export function createInitialState(numPlayers: number): GameState {
+export function createInitialState(
+  numPlayers: number,
+  options: InitialStateOptions = {},
+): GameState {
+  const gameLengthYears = options.gameLengthYears ?? DEFAULT_GAME_LENGTH_YEARS;
   const players: Player[] = Array.from({ length: numPlayers }, (_, i) => ({
     id: String(i),
     name: `プレイヤー${i + 1}`,
@@ -34,7 +45,7 @@ export function createInitialState(numPlayers: number): GameState {
         year: 1,
         month: 4,
         type: 'system',
-        message: `ゲーム開始(${numPlayers}人プレイ)。目標: 総資産を増やそう!`,
+        message: `ゲーム開始(${numPlayers}人プレイ)。${gameLengthYears}年目の年次決算で総資産1位が勝利!`,
       },
     ],
     pendingTradeOffer: null,
@@ -44,5 +55,9 @@ export function createInitialState(numPlayers: number): GameState {
     turnStage: 'idle',
     nextLogId: 1,
     nextTradeOfferId: 1,
+    gameLengthYears,
+    gameOver: false,
+    winnerPlayerIds: [],
+    finalRanking: [],
   };
 }
