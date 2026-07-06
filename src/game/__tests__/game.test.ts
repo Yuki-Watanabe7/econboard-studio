@@ -50,6 +50,17 @@ describe('boardgame.io 統合', () => {
     expect(G.currentMonth).toBe(5); // 4月開始 → 一巡で5月
   });
 
+  it('サイコロを振る前にターン終了はできない', () => {
+    const client = createClient();
+    client.moves.endTurn(); // INVALID_MOVE になるはず
+
+    const state = client.getState()!;
+    expect(state.ctx.currentPlayer).toBe('0'); // 手番は変わらない
+    expect(state.G.turnStage).toBe('idle');
+    expect(state.G.turnNumber).toBe(1); // ターン番号も進まない
+    expect(state.G.currentMonth).toBe(4); // 月も進まない
+  });
+
   it('行き先を選ばずにターン終了はできない', () => {
     const client = createClient();
     client.moves.rollAndMove();

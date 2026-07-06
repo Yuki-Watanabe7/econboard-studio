@@ -49,10 +49,7 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
             {G.turnStage === 'awaitingDestination' && (
               <span className="hint">光っている駅をクリックして移動先を選ぶ</span>
             )}
-            <button
-              onClick={() => moves.endTurn()}
-              disabled={G.turnStage === 'awaitingDestination'}
-            >
+            <button onClick={() => moves.endTurn()} disabled={G.turnStage !== 'arrived'}>
               ターン終了
             </button>
           </div>
