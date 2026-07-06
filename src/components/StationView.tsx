@@ -6,6 +6,7 @@ interface StationViewProps {
   playersHere: Player[];
   isReachable: boolean;
   isCurrentPlayerHere: boolean;
+  isDestination: boolean;
   onClick?: (stationId: string) => void;
 }
 
@@ -15,6 +16,7 @@ export function StationView({
   playersHere,
   isReachable,
   isCurrentPlayerHere,
+  isDestination,
   onClick,
 }: StationViewProps) {
   const { x, y } = station.position;
@@ -41,6 +43,15 @@ export function StationView({
           <text x={x} y={y + 5} textAnchor="middle" className="station-event-mark">
             !
           </text>
+        </>
+      )}
+      {isDestination && (
+        <>
+          <circle cx={x} cy={y} r={24} className="station-destination-ring" />
+          <g className="station-destination-flag">
+            <line x1={x + 17} y1={y - 15} x2={x + 17} y2={y - 34} />
+            <polygon points={`${x + 17},${y - 34} ${x + 33},${y - 29.5} ${x + 17},${y - 25}`} />
+          </g>
         </>
       )}
       <text x={x} y={y + 34} textAnchor="middle" className="station-name">
