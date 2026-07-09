@@ -13,6 +13,7 @@ export type PropertyId = string;
 export type PlayerId = string;
 export type EconomicEventId = string;
 export type CashEventId = string;
+export type ItemId = string;
 
 /** 物件カテゴリ。将来はデータ側で自由に追加できるよう string union に留める */
 export type PropertyCategory = 'food' | 'tourism' | 'industry' | 'retail' | 'tech';
@@ -96,6 +97,37 @@ export interface PlayerStatusFlags {
   bankrupt: boolean;
 }
 
+/**
+ * アイテムを使用できる手番のタイミング。GameState.turnStage と対応させる
+ * (idle → beforeRoll, awaitingDestination → afterRoll, arrived → afterArrival)。
+ */
+export type ItemUsageTiming = 'beforeRoll' | 'afterRoll' | 'afterArrival';
+
+/**
+ * アイテムの効果。将来効果種別を追加する場合はここに union を足し、
+ * rules/items.ts の適用処理と schema.ts の itemEffectSchema を併せて更新する。
+ */
+export type ItemEffect = { type: 'grantCash'; amount: number };
+
+/** 編集可能なアイテム定義(データ)。所持側は PlayerInventoryItem で表現する */
+export interface ItemDefinition {
+  id: ItemId;
+  name: string;
+  description: string;
+  /** このいずれかのタイミングに該当すれば使用できる */
+  usableTimings: ItemUsageTiming[];
+  effect: ItemEffect;
+}
+
+/**
+ * プレイヤーが所持するアイテムの1インスタンス。
+ * 同じアイテムを複数所持できるよう、定義 ID とは別に所持インスタンス ID を持つ。
+ */
+export interface PlayerInventoryItem {
+  instanceId: string;
+  itemId: ItemId;
+}
+
 export interface Player {
   id: PlayerId;
   name: string;
@@ -105,6 +137,7 @@ export interface Player {
   /** 現金 + 保有物件の評価額。決算・購入・売買のたびに再計算する */
   netWorth: number;
   status: PlayerStatusFlags;
+  inventory: PlayerInventoryItem[];
 }
 
 export type TradeOfferStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
@@ -192,7 +225,15 @@ export interface CashEvent {
 }
 
 export type GameLogType =
-  'system' | 'move' | 'purchase' | 'settlement' | 'trade' | 'economy' | 'destination' | 'cashEvent';
+  | 'system'
+  | 'move'
+  | 'purchase'
+  | 'settlement'
+  | 'trade'
+  | 'economy'
+  | 'destination'
+  | 'cashEvent'
+  | 'item';
 
 export interface GameLogEntry {
   id: number;
@@ -242,6 +283,8 @@ export interface GameState {
   nextLogId: number;
   /** トレードオファー ID 採番用カウンタ */
   nextTradeOfferId: number;
+  /** アイテム所持インスタンス ID 採番用カウンタ */
+  nextItemInstanceId: number;
   /** ゲームの長さ(年数)。この年の年次決算をもって終了する */
   gameLengthYears: number;
   /** 最終年の年次決算後に true。以降すべての move は無効 */

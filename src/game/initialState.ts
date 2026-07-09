@@ -1,15 +1,20 @@
-import type { GameState, Player } from './types';
+import type { GameState, ItemId, Player } from './types';
 import { sampleMap, sampleProperties } from './sampleData';
 import { selectDestinationStation } from './rules/destination';
+import { grantItem } from './rules/items';
 
 export const INITIAL_CASH = 10000;
 export const START_STATION_ID = 'central';
 /** 既定のゲーム年数。この年の年次決算をもってゲーム終了となる */
 export const DEFAULT_GAME_LENGTH_YEARS = 3;
+/** 既定の初期所持アイテム。全プレイヤーに配布する(アイテム基盤確認用) */
+export const DEFAULT_STARTING_ITEM_IDS: ItemId[] = ['grant-cash-small'];
 
 /** 初期状態のオプション。将来 UI(セットアップ画面)から注入する想定 */
 export interface InitialStateOptions {
   gameLengthYears?: number;
+  /** 全プレイヤーに配布する初期所持アイテム。省略時は DEFAULT_STARTING_ITEM_IDS */
+  startingItemIds?: ItemId[];
 }
 
 /**
@@ -23,6 +28,7 @@ export function createInitialState(
   random: () => number = () => 0,
 ): GameState {
   const gameLengthYears = options.gameLengthYears ?? DEFAULT_GAME_LENGTH_YEARS;
+  const startingItemIds = options.startingItemIds ?? DEFAULT_STARTING_ITEM_IDS;
   const players: Player[] = Array.from({ length: numPlayers }, (_, i) => ({
     id: String(i),
     name: `プレイヤー${i + 1}`,
@@ -31,6 +37,7 @@ export function createInitialState(
     ownedPropertyIds: [],
     netWorth: INITIAL_CASH,
     status: { skipNextTurn: false, bankrupt: false },
+    inventory: [],
   }));
 
   // 最初の目的地。全員が立つスタート駅は除外する(開始と同時の到着を防ぐ)
@@ -39,7 +46,7 @@ export function createInitialState(
   const destinationName =
     sampleMap.stations.find((s) => s.id === destinationStationId)?.name ?? destinationStationId;
 
-  return {
+  let state: GameState = {
     players,
     currentPlayerId: '0',
     turnNumber: 1,
@@ -73,9 +80,18 @@ export function createInitialState(
     turnStage: 'idle',
     nextLogId: 2,
     nextTradeOfferId: 1,
+    nextItemInstanceId: 0,
     gameLengthYears,
     gameOver: false,
     winnerPlayerIds: [],
     finalRanking: [],
   };
+
+  for (const player of players) {
+    for (const itemId of startingItemIds) {
+      state = grantItem(state, player.id, itemId);
+    }
+  }
+
+  return state;
 }
