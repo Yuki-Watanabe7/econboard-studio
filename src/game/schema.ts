@@ -15,7 +15,7 @@ export const regionSchema = z.object({
 });
 
 /** 駅マス種別。types.ts の StationType と対応させる(種別追加時は両方を更新) */
-export const stationTypeSchema = z.enum(['normal', 'event', 'cashEvent']);
+export const stationTypeSchema = z.enum(['normal', 'event', 'cashEvent', 'item', 'shop']);
 
 export const stationSchema = z.object({
   id: z.string().min(1),
@@ -104,6 +104,12 @@ export const itemDefinitionSchema = z.object({
   description: z.string(),
   usableTimings: z.array(itemUsageTimingSchema).min(1),
   effect: itemEffectSchema,
+});
+
+/** ショップマスの品揃え。types.ts の ShopOffer と対応させる */
+export const shopOfferSchema = z.object({
+  itemId: z.string().min(1),
+  price: z.number().int().positive(),
 });
 
 /**

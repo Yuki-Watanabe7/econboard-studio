@@ -216,6 +216,60 @@ input {
   font-size: 10px;
 }
 
+/* ショップ品揃えの価格表示(ItemPanel と共通の .item-main 内に置く) */
+.item-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shop-price {
+  color: var(--accent, #5b8def);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* アイテム入手マス: 破線リング + "?" マーク */
+.station-item-ring {
+  fill: none;
+  stroke: #a970d8;
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.station-item-mark {
+  fill: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.station-item-mark--legend {
+  font-size: 11px;
+}
+
+/* ショップマス: 破線リング + "S" マーク */
+.station-shop-ring {
+  fill: none;
+  stroke: #e0a13c;
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.station-shop-mark {
+  fill: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.station-shop-mark--legend {
+  font-size: 11px;
+}
+
 /* 目的地駅: 実線リング + 旗マーク */
 .station-destination-ring {
   fill: none;

@@ -4,13 +4,16 @@ import {
   economicEventSchema,
   cashEventSchema,
   itemDefinitionSchema,
+  shopOfferSchema,
 } from '../schema';
 import {
+  itemMassPool,
   sampleCashEvents,
   sampleEvents,
   sampleItems,
   sampleMap,
   sampleProperties,
+  shopOffers,
 } from '../sampleData';
 import type { Station } from '../types';
 
@@ -74,6 +77,31 @@ describe('サンプルデータの整合性', () => {
     for (const item of sampleItems) {
       expect(itemDefinitionSchema.safeParse(item).success).toBe(true);
     }
+  });
+
+  it('アイテム入手マスの候補がすべて実在するアイテムを参照している', () => {
+    const itemIds = new Set(sampleItems.map((i) => i.id));
+    expect(itemMassPool.length).toBeGreaterThan(0);
+    for (const id of itemMassPool) {
+      expect(itemIds.has(id)).toBe(true);
+    }
+  });
+
+  it('ショップ品揃えがスキーマを満たし、実在するアイテムを参照している', () => {
+    const itemIds = new Set(sampleItems.map((i) => i.id));
+    expect(shopOffers.length).toBeGreaterThan(0);
+    for (const offer of shopOffers) {
+      expect(shopOfferSchema.safeParse(offer).success).toBe(true);
+      expect(itemIds.has(offer.itemId)).toBe(true);
+    }
+  });
+
+  it('アイテム入手マスが少なくとも1つある', () => {
+    expect(sampleMap.stations.some((s) => s.stationType === 'item')).toBe(true);
+  });
+
+  it('ショップマスが少なくとも1つある', () => {
+    expect(sampleMap.stations.some((s) => s.stationType === 'shop')).toBe(true);
   });
 
   it('不正な駅マス種別は validateGameData が検出する', () => {

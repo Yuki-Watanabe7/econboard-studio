@@ -8,7 +8,9 @@ import type { Station } from '../types';
  * (単一情報源を routes / properties 側に置くことで、編集時の不整合を防ぐ)
  *
  * stationType はマス種別。'event' の駅に到着すると経済イベントが、'cashEvent' の駅に
- * 到着すると所持金イベント(現金の増減)が自動発生する(rules/stationEffects.ts)。
+ * 到着すると所持金イベント(現金の増減)が自動発生する。'item' の駅に到着すると
+ * ランダムでアイテムを1つ入手し、'shop' の駅では到着後に現金でアイテムを購入できる
+ * (rules/stationEffects.ts / rules/items.ts)。
  * 種別を編集したら __tests__/data.test.ts が安全網になる。
  */
 type StationSeed = Omit<Station, 'connectedStationIds' | 'propertyIds'>;
@@ -32,7 +34,7 @@ export const sampleStationSeeds: StationSeed[] = [
     id: 'university',
     name: '大学前',
     regionId: 'midtown',
-    stationType: 'normal',
+    stationType: 'item',
     position: { x: 300, y: 160 },
   },
   {
@@ -74,7 +76,7 @@ export const sampleStationSeeds: StationSeed[] = [
     id: 'mountain-gate',
     name: '山の手ゲート',
     regionId: 'highland',
-    stationType: 'normal',
+    stationType: 'shop',
     position: { x: 640, y: 70 },
   },
   {

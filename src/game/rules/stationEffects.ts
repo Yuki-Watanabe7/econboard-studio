@@ -1,6 +1,15 @@
-import type { CashEvent, EconomicEvent, GameState, PlayerId, RuleResult } from '../types';
+import type {
+  CashEvent,
+  EconomicEvent,
+  GameState,
+  ItemDefinition,
+  ItemId,
+  PlayerId,
+  RuleResult,
+} from '../types';
 import { applyEconomicEvent } from './economy';
 import { applyCashEvent, selectCashEvent } from './cashEvents';
+import { acquireRandomItem } from './items';
 import { findPlayer, findStation } from './helpers';
 
 /**
@@ -32,6 +41,11 @@ export function selectEconomicEvent(
  * - normal: 何もしない
  * - event: 登録済み経済イベントから1件を選んで適用する(未登録なら何もしない)
  * - cashEvent: 登録済み所持金イベントから1件を選んで到着プレイヤーに適用する(未登録なら何もしない)
+ * - item: 入手候補からランダムで1つを付与する(所持上限に達している場合は入手できない)
+ * - shop: 到着時に自動発生する効果はない(購入は buyShopItem move による能動操作)
+ *
+ * items / itemPool はアイテム入手マス用。既存呼び出し(イベント/所持金イベントのテスト)を
+ * 壊さないよう任意引数とし、省略時は item マスでも何も起きない。
  */
 export function resolveStationArrival(
   state: GameState,
@@ -39,6 +53,8 @@ export function resolveStationArrival(
   events: EconomicEvent[],
   cashEvents: CashEvent[],
   random: () => number,
+  items: ItemDefinition[] = [],
+  itemPool: ItemId[] = [],
 ): RuleResult {
   const player = findPlayer(state, playerId);
   if (!player) {
@@ -65,5 +81,10 @@ export function resolveStationArrival(
     return applyCashEvent(state, playerId, event);
   }
 
+  if (station.stationType === 'item') {
+    return acquireRandomItem(state, playerId, items, itemPool, random);
+  }
+
+  // shop マスは到着時の自動効果なし(normal と同様に素通り)
   return { ok: true, state };
 }

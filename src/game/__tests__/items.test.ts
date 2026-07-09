@@ -1,11 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import { grantItem, handleUseItem, isItemUsableNow } from '../rules/items';
+import {
+  MAX_INVENTORY_SIZE,
+  acquireRandomItem,
+  buyShopItem,
+  grantItem,
+  handleUseItem,
+  isInventoryFull,
+  isItemUsableNow,
+  selectRandomItem,
+} from '../rules/items';
 import { updatePlayer } from '../rules/helpers';
 import { getReachableStations } from '../rules/movement';
-import { sampleItems, sampleMap } from '../sampleData';
+import { itemMassPool, sampleItems, sampleMap, shopOffers } from '../sampleData';
 import { createInitialState } from '../initialState';
-import type { ItemDefinition } from '../types';
+import type { ItemDefinition, ShopOffer } from '../types';
 import { setupState } from './testUtils';
+
+/** テスト用: プレイヤーの所持数を所持上限まで埋める */
+function fillInventory(state = setupState(), playerId = '0') {
+  let next = state;
+  for (let i = 0; i < MAX_INVENTORY_SIZE; i++) {
+    next = grantItem(next, playerId, 'grant-cash-small');
+  }
+  return next;
+}
+
+function shopOfferFor(itemId: string): ShopOffer {
+  const offer = shopOffers.find((o) => o.itemId === itemId);
+  if (!offer) throw new Error(`ショップ品揃え ${itemId} が見つからない`);
+  return offer;
+}
 
 /** rollDice(0.4)=3, rollDice(0.75)=5 になる乱数列(合計8) */
 function fixedRandomSequence(values: number[]): () => number {
@@ -46,6 +70,173 @@ describe('grantItem', () => {
     const [first, second] = state.players[0].inventory;
     expect(first.instanceId).not.toBe(second.instanceId);
     expect(first.itemId).toBe('grant-cash-small');
+  });
+});
+
+describe('selectRandomItem', () => {
+  it('入手候補が空なら null を返す', () => {
+    expect(selectRandomItem([], () => 0)).toBeNull();
+  });
+
+  it('乱数が最小のとき先頭の候補を選ぶ', () => {
+    expect(selectRandomItem(itemMassPool, () => 0)).toBe(itemMassPool[0]);
+  });
+
+  it('乱数が最大のとき末尾の候補を選ぶ', () => {
+    expect(selectRandomItem(itemMassPool, () => 0.9999)).toBe(itemMassPool.at(-1));
+  });
+});
+
+describe('isInventoryFull', () => {
+  it('所持数が上限未満なら false、上限に達したら true', () => {
+    const state = setupState();
+    expect(isInventoryFull(state.players[0])).toBe(false);
+    const full = fillInventory(state);
+    expect(isInventoryFull(full.players[0])).toBe(true);
+  });
+});
+
+describe('acquireRandomItem(アイテム入手マス)', () => {
+  it('入手候補から1つを付与し、ログに残す', () => {
+    const state = setupState();
+    const result = acquireRandomItem(state, '0', sampleItems, itemMassPool, () => 0);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // 乱数 0 → itemMassPool[0] = 'grant-cash-small'
+    expect(result.state.players[0].inventory).toHaveLength(1);
+    expect(result.state.players[0].inventory[0].itemId).toBe(itemMassPool[0]);
+    expect(result.state.logs.some((l) => l.type === 'item' && l.message.includes('入手'))).toBe(
+      true,
+    );
+  });
+
+  it('乱数を固定すると入手アイテムを再現できる', () => {
+    const state = setupState();
+    const first = acquireRandomItem(state, '0', sampleItems, itemMassPool, () => 0.9999);
+    const second = acquireRandomItem(state, '0', sampleItems, itemMassPool, () => 0.9999);
+
+    expect(first.ok && second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(first.state.players[0].inventory[0].itemId).toBe(itemMassPool.at(-1));
+    expect(first.state.players[0].inventory[0].itemId).toBe(
+      second.state.players[0].inventory[0].itemId,
+    );
+  });
+
+  it('所持上限に達している場合はアイテムが増えず、その旨をログに残す', () => {
+    const state = fillInventory();
+    const result = acquireRandomItem(state, '0', sampleItems, itemMassPool, () => 0);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.state.players[0].inventory).toHaveLength(MAX_INVENTORY_SIZE);
+    expect(result.state.logs.some((l) => l.message.includes('所持上限'))).toBe(true);
+  });
+
+  it('破産しているプレイヤーは入手しない(状態は変化しない)', () => {
+    let state = setupState();
+    state = updatePlayer(state, '0', (p) => ({ ...p, status: { ...p.status, bankrupt: true } }));
+    const result = acquireRandomItem(state, '0', sampleItems, itemMassPool, () => 0);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.state.players[0].inventory).toHaveLength(0);
+    expect(result.state.logs).toHaveLength(state.logs.length);
+  });
+
+  it('入手候補が空なら何もしない', () => {
+    const state = setupState();
+    const result = acquireRandomItem(state, '0', sampleItems, [], () => 0);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.state.players[0].inventory).toHaveLength(0);
+  });
+
+  it('存在しないプレイヤーは失敗する', () => {
+    const result = acquireRandomItem(setupState(), '9', sampleItems, itemMassPool, () => 0);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe('buyShopItem(ショップマス)', () => {
+  it('購入すると現金が減り、アイテムが増える', () => {
+    const state = setupState();
+    const offer = shopOfferFor('double-dice');
+    const before = state.players[0];
+
+    const result = buyShopItem(state, '0', offer, sampleItems);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const player = result.state.players[0];
+    expect(player.cash).toBe(before.cash - offer.price);
+    expect(player.inventory).toHaveLength(1);
+    expect(player.inventory[0].itemId).toBe('double-dice');
+  });
+
+  it('総資産が支払い分だけ再計算される', () => {
+    const state = setupState();
+    const offer = shopOfferFor('double-dice');
+    const before = state.players[0];
+
+    const result = buyShopItem(state, '0', offer, sampleItems);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.state.players[0].netWorth).toBe(before.netWorth - offer.price);
+  });
+
+  it('購入と支払いがログに残る(支払いは chargePlayer を再利用)', () => {
+    const state = setupState();
+    const offer = shopOfferFor('double-dice');
+
+    const result = buyShopItem(state, '0', offer, sampleItems);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.state.logs.some((l) => l.type === 'item' && l.message.includes('購入'))).toBe(
+      true,
+    );
+    expect(
+      result.state.logs.some((l) => l.type === 'settlement' && l.message.includes('支払')),
+    ).toBe(true);
+  });
+
+  it('現金が足りない場合は購入できない(破産させない)', () => {
+    let state = setupState();
+    const offer = shopOfferFor('double-dice');
+    state = updatePlayer(state, '0', (p) => ({ ...p, cash: offer.price - 1 }));
+
+    const result = buyShopItem(state, '0', offer, sampleItems);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it('所持上限に達している場合は購入できない', () => {
+    const state = fillInventory();
+    const offer = shopOfferFor('double-dice');
+
+    const result = buyShopItem(state, '0', offer, sampleItems);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it('破産しているプレイヤーは購入できない', () => {
+    let state = setupState();
+    state = updatePlayer(state, '0', (p) => ({ ...p, status: { ...p.status, bankrupt: true } }));
+    const offer = shopOfferFor('double-dice');
+
+    const result = buyShopItem(state, '0', offer, sampleItems);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it('存在しないアイテムの品揃えは購入できない', () => {
+    const state = setupState();
+    const result = buyShopItem(state, '0', { itemId: 'no-such-item', price: 100 }, sampleItems);
+    expect(result.ok).toBe(false);
   });
 });
 

@@ -5,7 +5,7 @@ import { sampleRoutes } from './data/routes';
 import { samplePropertySeeds } from './data/properties';
 import { sampleEvents } from './data/events';
 import { sampleCashEvents } from './data/cashEvents';
-import { sampleItems } from './data/items';
+import { sampleItems, itemMassPool, shopOffers } from './data/items';
 
 /**
  * 物件データから Property を組み立てる。
@@ -46,4 +46,12 @@ export const sampleMap: GameMap = {
   edges: sampleRoutes,
 };
 
-export { sampleCashEvents, sampleEvents, sampleItems, sampleRegions, sampleRoutes };
+export {
+  sampleCashEvents,
+  sampleEvents,
+  sampleItems,
+  itemMassPool,
+  shopOffers,
+  sampleRegions,
+  sampleRoutes,
+};
