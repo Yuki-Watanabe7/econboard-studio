@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { validateGameData, economicEventSchema, cashEventSchema } from '../schema';
-import { sampleCashEvents, sampleEvents, sampleMap, sampleProperties } from '../sampleData';
+import {
+  validateGameData,
+  economicEventSchema,
+  cashEventSchema,
+  itemDefinitionSchema,
+} from '../schema';
+import {
+  sampleCashEvents,
+  sampleEvents,
+  sampleItems,
+  sampleMap,
+  sampleProperties,
+} from '../sampleData';
 import type { Station } from '../types';
 
 /**
@@ -57,6 +68,12 @@ describe('サンプルデータの整合性', () => {
 
   it('所持金イベント駅が少なくとも1つある', () => {
     expect(sampleMap.stations.some((s) => s.stationType === 'cashEvent')).toBe(true);
+  });
+
+  it('アイテム定義がスキーマを満たす', () => {
+    for (const item of sampleItems) {
+      expect(itemDefinitionSchema.safeParse(item).success).toBe(true);
+    }
   });
 
   it('不正な駅マス種別は validateGameData が検出する', () => {

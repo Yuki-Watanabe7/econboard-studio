@@ -37,6 +37,32 @@ describe('boardgame.io 統合', () => {
     expect(state.G.turnNumber).toBe(2);
   });
 
+  it('useItem: 手番開始時(idle)にアイテムを使用すると現金が増え、インベントリから消費される', () => {
+    const client = createClient();
+    const G0 = client.getState()!.G;
+    const instanceId = G0.players[0].inventory[0].instanceId;
+    const beforeCash = G0.players[0].cash;
+
+    client.moves.useItem(instanceId);
+    const G = client.getState()!.G;
+
+    expect(G.players[0].cash).toBe(beforeCash + 500);
+    expect(G.players[0].inventory).toEqual([]);
+    expect(G.logs.at(-1)?.type).toBe('item');
+  });
+
+  it('useItem: サイコロを振った後(beforeRoll 専用アイテムの使用可能タイミング外)は使用できない', () => {
+    const client = createClient();
+    const instanceId = client.getState()!.G.players[0].inventory[0].instanceId;
+
+    client.moves.rollAndMove();
+    const before = client.getState()!.G;
+    client.moves.useItem(instanceId);
+    const after = client.getState()!.G;
+
+    expect(after).toEqual(before); // INVALID_MOVE で状態は変化しない
+  });
+
   it('全プレイヤーが一巡すると月が進む', () => {
     const client = createClient(2);
 

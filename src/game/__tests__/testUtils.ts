@@ -2,9 +2,9 @@ import type { GameMap, GameState, PlayerId, PropertyId } from '../types';
 import { createInitialState } from '../initialState';
 import { updatePlayer, updateProperty } from '../rules/helpers';
 
-/** テスト用: 初期状態を作る */
+/** テスト用: 初期状態を作る(既定の初期所持アイテムは持たせない) */
 export function setupState(numPlayers = 2): GameState {
-  return createInitialState(numPlayers);
+  return createInitialState(numPlayers, { startingItemIds: [] });
 }
 
 /** テスト用: 購入手続きを経ずに物件を所有させる */

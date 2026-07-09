@@ -17,7 +17,8 @@ import {
 import { applyEconomicEvent } from './rules/economy';
 import { applyCashEvent } from './rules/cashEvents';
 import { declareBankruptcy, skipBankruptPlayerTurn } from './rules/bankruptcy';
-import { sampleCashEvents, sampleEvents } from './sampleData';
+import { handleUseItem } from './rules/items';
+import { sampleCashEvents, sampleEvents, sampleItems } from './sampleData';
 
 /**
  * boardgame.io 統合レイヤー。
@@ -138,6 +139,14 @@ const triggerCashEvent: Move<GameState> = ({ G }, cashEventId: string) => {
   return result.state;
 };
 
+/** 所持アイテムを使用する。使用可能なタイミング外・破産・ゲーム終了後は INVALID_MOVE */
+const useItemMove: Move<GameState> = ({ G }, instanceId: string) => {
+  if (G.gameOver) return INVALID_MOVE;
+  const result = handleUseItem(G, G.currentPlayerId, instanceId, sampleItems);
+  if (!result.ok) return INVALID_MOVE;
+  return result.state;
+};
+
 /** 開発用: 指定プレイヤーを強制的に破産させる(将来は支払い系イベントから発生する想定) */
 const forceBankruptcy: Move<GameState> = ({ G }, playerId: PlayerId) => {
   if (G.gameOver) return INVALID_MOVE;
@@ -186,6 +195,7 @@ export const EconBoardGame: Game<GameState> = {
     createTradeOffer: createTradeOfferMove,
     acceptTradeOffer: acceptTradeOfferMove,
     rejectTradeOffer: rejectTradeOfferMove,
+    useItem: useItemMove,
     triggerEconomicEvent,
     triggerCashEvent,
     forceBankruptcy,

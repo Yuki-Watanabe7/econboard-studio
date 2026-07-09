@@ -88,6 +88,22 @@ export const cashEventSchema = z.object({
   effect: cashEventEffectSchema,
 });
 
+/** アイテム使用タイミング。types.ts の ItemUsageTiming と対応させる */
+export const itemUsageTimingSchema = z.enum(['beforeRoll', 'afterRoll', 'afterArrival']);
+
+/** アイテム効果。types.ts の ItemEffect と対応させる(種別追加時は両方を更新) */
+export const itemEffectSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('grantCash'), amount: z.number().int().positive() }),
+]);
+
+export const itemDefinitionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string(),
+  usableTimings: z.array(itemUsageTimingSchema).min(1),
+  effect: itemEffectSchema,
+});
+
 /**
  * スキーマ検証に加えて、ID 参照の整合性を検査する。
  * 戻り値は問題の説明文の配列(空なら整合)。

@@ -5,6 +5,7 @@ import { PlayerPanel } from './PlayerPanel';
 import { PropertyList } from './PropertyList';
 import { GameLog } from './GameLog';
 import { TradePanel } from './TradePanel';
+import { ItemPanel } from './ItemPanel';
 import { DebugPanel } from './DebugPanel';
 import { GameOverPanel } from './GameOverPanel';
 import { playerColor } from './constants';
@@ -79,6 +80,13 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
 
         <aside className="sidebar">
           <PlayerPanel G={G} currentPlayerId={currentPlayerId} />
+          {!G.gameOver && (
+            <ItemPanel
+              G={G}
+              currentPlayerId={currentPlayerId}
+              onUseItem={(instanceId) => moves.useItem(instanceId)}
+            />
+          )}
           {!G.gameOver && (
             <TradePanel
               G={G}
