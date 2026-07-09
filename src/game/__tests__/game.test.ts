@@ -40,15 +40,39 @@ describe('boardgame.io 統合', () => {
   it('useItem: 手番開始時(idle)にアイテムを使用すると現金が増え、インベントリから消費される', () => {
     const client = createClient();
     const G0 = client.getState()!.G;
-    const instanceId = G0.players[0].inventory[0].instanceId;
+    const instanceId = G0.players[0].inventory.find(
+      (i) => i.itemId === 'grant-cash-small',
+    )!.instanceId;
     const beforeCash = G0.players[0].cash;
+    const beforeInventorySize = G0.players[0].inventory.length;
 
     client.moves.useItem(instanceId);
     const G = client.getState()!.G;
 
     expect(G.players[0].cash).toBe(beforeCash + 500);
-    expect(G.players[0].inventory).toEqual([]);
+    expect(G.players[0].inventory).toHaveLength(beforeInventorySize - 1);
+    expect(G.players[0].inventory.some((i) => i.instanceId === instanceId)).toBe(false);
     expect(G.logs.at(-1)?.type).toBe('item');
+  });
+
+  it('useItem: double-dice を使用すると2個分のサイコロで合計歩数の移動候補が表示される', () => {
+    const client = createClient();
+    const G0 = client.getState()!.G;
+    const instanceId = G0.players[0].inventory.find((i) => i.itemId === 'double-dice')!.instanceId;
+
+    client.moves.useItem(instanceId);
+    const G = client.getState()!.G;
+
+    expect(G.lastDiceRolls).toHaveLength(2);
+    expect(G.lastDiceRoll).toBe(G.lastDiceRolls[0] + G.lastDiceRolls[1]);
+    expect(G.turnStage).toBe('awaitingDestination');
+    expect(G.reachableStationIds.length).toBeGreaterThan(0);
+    expect(G.players[0].inventory.some((i) => i.instanceId === instanceId)).toBe(false);
+
+    // 1手番で二重にサイコロを振れない(すでに idle ではないため rollAndMove は無効)
+    const before = client.getState()!.G;
+    client.moves.rollAndMove();
+    expect(client.getState()!.G).toEqual(before);
   });
 
   it('useItem: サイコロを振った後(beforeRoll 専用アイテムの使用可能タイミング外)は使用できない', () => {

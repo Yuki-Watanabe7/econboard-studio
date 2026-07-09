@@ -98,6 +98,7 @@ export function finalizeGame(state: GameState): GameState {
     winnerPlayerIds,
     pendingTradeOffer: null,
     lastDiceRoll: null,
+    lastDiceRolls: [],
     reachableStationIds: [],
     turnStage: 'idle',
   };
@@ -140,6 +141,7 @@ export function endPlayerTurn(
     ...state,
     turnNumber: state.turnNumber + 1,
     lastDiceRoll: null,
+    lastDiceRolls: [],
     reachableStationIds: [],
     turnStage: 'idle',
   };

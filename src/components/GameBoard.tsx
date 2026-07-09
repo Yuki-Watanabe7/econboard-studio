@@ -58,7 +58,14 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
             >
               サイコロを振る
             </button>
-            {G.lastDiceRoll !== null && <span className="dice-result">出目: {G.lastDiceRoll}</span>}
+            {G.lastDiceRoll !== null && (
+              <span className="dice-result">
+                出目:{' '}
+                {G.lastDiceRolls.length > 1
+                  ? `${G.lastDiceRolls.join(' + ')} = ${G.lastDiceRoll}`
+                  : G.lastDiceRoll}
+              </span>
+            )}
             {G.turnStage === 'awaitingDestination' && (
               <span className="hint">光っている駅をクリックして移動先を選ぶ</span>
             )}

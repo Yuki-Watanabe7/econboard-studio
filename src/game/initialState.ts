@@ -7,8 +7,13 @@ export const INITIAL_CASH = 10000;
 export const START_STATION_ID = 'central';
 /** 既定のゲーム年数。この年の年次決算をもってゲーム終了となる */
 export const DEFAULT_GAME_LENGTH_YEARS = 3;
-/** 既定の初期所持アイテム。全プレイヤーに配布する(アイテム基盤確認用) */
-export const DEFAULT_STARTING_ITEM_IDS: ItemId[] = ['grant-cash-small'];
+/** 既定の初期所持アイテム。全プレイヤーに配布する(アイテム基盤・複数サイコロ系アイテム確認用) */
+export const DEFAULT_STARTING_ITEM_IDS: ItemId[] = [
+  'grant-cash-small',
+  'double-dice',
+  'triple-dice',
+  'reroll-dice',
+];
 
 /** 初期状態のオプション。将来 UI(セットアップ画面)から注入する想定 */
 export interface InitialStateOptions {
@@ -76,6 +81,7 @@ export function createInitialState(
     economicState: { activeModifiers: [] },
     currentDestinationStationId: destinationStationId,
     lastDiceRoll: null,
+    lastDiceRolls: [],
     reachableStationIds: [],
     turnStage: 'idle',
     nextLogId: 2,
