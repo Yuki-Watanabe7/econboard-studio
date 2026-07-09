@@ -94,6 +94,8 @@ export const itemUsageTimingSchema = z.enum(['beforeRoll', 'afterRoll', 'afterAr
 /** アイテム効果。types.ts の ItemEffect と対応させる(種別追加時は両方を更新) */
 export const itemEffectSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('grantCash'), amount: z.number().int().positive() }),
+  z.object({ type: z.literal('multiRoll'), diceCount: z.number().int().min(2) }),
+  z.object({ type: z.literal('rerollDice') }),
 ]);
 
 export const itemDefinitionSchema = z.object({

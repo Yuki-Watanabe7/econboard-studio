@@ -2,8 +2,8 @@ import type { Game, Move } from 'boardgame.io';
 import { INVALID_MOVE } from 'boardgame.io/core';
 import type { GameState, PlayerId, PropertyId, StationId } from './types';
 import { createInitialState, type InitialStateOptions } from './initialState';
-import { addLog, findPlayer } from './rules/helpers';
-import { getReachableStations, movePlayer, rollDice } from './rules/movement';
+import { findPlayer } from './rules/helpers';
+import { applyDiceRoll, movePlayer } from './rules/movement';
 import { resolveStationArrival } from './rules/stationEffects';
 import { resolveDestinationArrival } from './rules/destination';
 import { buyProperty } from './rules/property';
@@ -33,19 +33,9 @@ import { sampleCashEvents, sampleEvents, sampleItems } from './sampleData';
 const rollAndMove: Move<GameState> = ({ G, random }) => {
   if (G.gameOver) return INVALID_MOVE;
   if (G.turnStage !== 'idle') return INVALID_MOVE;
-  const player = findPlayer(G, G.currentPlayerId);
-  if (!player) return INVALID_MOVE;
-
-  const roll = rollDice(() => random.Number());
-  const reachable = getReachableStations(G.map, player.currentStationId, roll);
-  let next: GameState = {
-    ...G,
-    lastDiceRoll: roll,
-    reachableStationIds: reachable,
-    turnStage: 'awaitingDestination',
-  };
-  next = addLog(next, 'move', `${player.name} はサイコロで ${roll} を出した`, player.id);
-  return next;
+  const result = applyDiceRoll(G, G.currentPlayerId, 1, () => random.Number());
+  if (!result.ok) return INVALID_MOVE;
+  return result.state;
 };
 
 const moveTo: Move<GameState> = ({ G, random }, toStationId: StationId) => {
@@ -140,9 +130,11 @@ const triggerCashEvent: Move<GameState> = ({ G }, cashEventId: string) => {
 };
 
 /** 所持アイテムを使用する。使用可能なタイミング外・破産・ゲーム終了後は INVALID_MOVE */
-const useItemMove: Move<GameState> = ({ G }, instanceId: string) => {
+const useItemMove: Move<GameState> = ({ G, random }, instanceId: string) => {
   if (G.gameOver) return INVALID_MOVE;
-  const result = handleUseItem(G, G.currentPlayerId, instanceId, sampleItems);
+  const result = handleUseItem(G, G.currentPlayerId, instanceId, sampleItems, () =>
+    random.Number(),
+  );
   if (!result.ok) return INVALID_MOVE;
   return result.state;
 };

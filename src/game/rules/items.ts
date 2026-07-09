@@ -7,6 +7,7 @@ import type {
   TurnStage,
 } from '../types';
 import { addLog, findPlayer, updatePlayer } from './helpers';
+import { applyDiceRoll } from './movement';
 import { recalculateAllNetWorth } from './settlement';
 
 /**
@@ -49,13 +50,18 @@ export function grantItem(
 
 /**
  * アイテム効果を適用する。効果種別ごとの分岐は、効果種別が増えたらここに追加する。
+ * サイコロ系の効果(multiRoll/rerollDice)は乱数を必要とするため random を注入する。
  */
 function applyItemEffect(
   state: GameState,
   playerId: PlayerId,
   definition: ItemDefinition,
-): GameState {
+  random: () => number,
+): RuleResult {
   const player = findPlayer(state, playerId);
+  if (!player) {
+    return { ok: false, reason: `プレイヤー ${playerId} が存在しない` };
+  }
   const effect = definition.effect;
   switch (effect.type) {
     case 'grantCash': {
@@ -63,10 +69,33 @@ function applyItemEffect(
       next = addLog(
         next,
         'item',
-        `${player?.name ?? playerId} は ${definition.name} を使用し、${effect.amount.toLocaleString()}G を受け取った`,
+        `${player.name} は ${definition.name} を使用し、${effect.amount.toLocaleString()}G を受け取った`,
         playerId,
       );
-      return recalculateAllNetWorth(next);
+      return { ok: true, state: recalculateAllNetWorth(next) };
+    }
+    case 'multiRoll': {
+      const rolled = applyDiceRoll(state, playerId, effect.diceCount, random);
+      if (!rolled.ok) return rolled;
+      const next = addLog(
+        rolled.state,
+        'item',
+        `${player.name} は ${definition.name} を使用した`,
+        playerId,
+      );
+      return { ok: true, state: next };
+    }
+    case 'rerollDice': {
+      const diceCount = state.lastDiceRolls.length || 1;
+      const rerolled = applyDiceRoll(state, playerId, diceCount, random, { isReroll: true });
+      if (!rerolled.ok) return rerolled;
+      const next = addLog(
+        rerolled.state,
+        'item',
+        `${player.name} は ${definition.name} を使用した`,
+        playerId,
+      );
+      return { ok: true, state: next };
     }
   }
 }
@@ -76,6 +105,7 @@ function applyItemEffect(
  * 条件: プレイヤーが存在する / 破産していない / ゲーム終了後でない /
  *       アイテムを所持している / 現在の手番状態で使用可能なタイミングである
  * 使用後はインベントリから消費され、効果を適用してログに残す。
+ * random はサイコロ系の効果(multiRoll/rerollDice)でのみ使われる。
  *
  * 関数名は `use` から始めると ESLint(react-hooks)が React Hook と誤認するため、
  * `handleUseItem` としている。
@@ -85,6 +115,7 @@ export function handleUseItem(
   playerId: PlayerId,
   instanceId: string,
   itemDefinitions: ItemDefinition[],
+  random: () => number,
 ): RuleResult {
   if (state.gameOver) {
     return { ok: false, reason: 'ゲームは終了しているためアイテムを使用できない' };
@@ -109,10 +140,9 @@ export function handleUseItem(
     return { ok: false, reason: `${definition.name} は今のタイミングでは使用できない` };
   }
 
-  let next = updatePlayer(state, playerId, (p) => ({
+  const next = updatePlayer(state, playerId, (p) => ({
     ...p,
     inventory: p.inventory.filter((i) => i.instanceId !== instanceId),
   }));
-  next = applyItemEffect(next, playerId, definition);
-  return { ok: true, state: next };
+  return applyItemEffect(next, playerId, definition, random);
 }

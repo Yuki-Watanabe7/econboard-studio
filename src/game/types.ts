@@ -107,7 +107,12 @@ export type ItemUsageTiming = 'beforeRoll' | 'afterRoll' | 'afterArrival';
  * アイテムの効果。将来効果種別を追加する場合はここに union を足し、
  * rules/items.ts の適用処理と schema.ts の itemEffectSchema を併せて更新する。
  */
-export type ItemEffect = { type: 'grantCash'; amount: number };
+export type ItemEffect =
+  | { type: 'grantCash'; amount: number }
+  /** サイコロを diceCount 個振り、合計歩数で移動候補を計算する(rollAndMove の代わり) */
+  | { type: 'multiRoll'; diceCount: number }
+  /** 直近のサイコロ(個数はそのまま)を振り直し、移動候補を再計算する */
+  | { type: 'rerollDice' };
 
 /** 編集可能なアイテム定義(データ)。所持側は PlayerInventoryItem で表現する */
 export interface ItemDefinition {
@@ -274,8 +279,14 @@ export interface GameState {
    * 直前と異なる駅から次の目的地が抽選される(rules/destination.ts)
    */
   currentDestinationStationId: StationId;
-  /** 直近のサイコロの出目(手番開始時は null) */
+  /** 直近のサイコロの出目の合計(手番開始時は null) */
   lastDiceRoll: number | null;
+  /**
+   * 直近のサイコロの個々の出目(手番開始時は空配列)。
+   * 通常のサイコロは1個、複数サイコロ系アイテム使用時はその個数分になる。
+   * reroll-dice はこの配列の長さと同じ個数を振り直す。
+   */
+  lastDiceRolls: number[];
   /** 出目確定後に選択可能な到達先(awaitingDestination の間のみ有効) */
   reachableStationIds: StationId[];
   turnStage: TurnStage;
