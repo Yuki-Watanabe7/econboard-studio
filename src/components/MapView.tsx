@@ -23,7 +23,7 @@ export function MapView({
   const currentPlayer = players.find((p) => p.id === currentPlayerId);
 
   return (
-    <svg viewBox="0 0 800 520" className="map-view" aria-label={map.name}>
+    <svg viewBox="0 0 800 560" className="map-view" aria-label={map.name}>
       {/* 路線(エッジ) */}
       {map.edges.map((edge) => {
         const from = stationById.get(edge.fromStationId);
@@ -88,6 +88,33 @@ export function MapView({
         </g>
         <text x={514} y={504} className="map-legend-label">
           目的地(到着で報酬)
+        </text>
+        {/* 2段目: アイテム入手マス・ショップマス */}
+        <circle cx={24} cy={536} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
+        <circle cx={24} cy={536} r={11} className="station-item-ring" />
+        <text
+          x={24}
+          y={540}
+          textAnchor="middle"
+          className="station-item-mark station-item-mark--legend"
+        >
+          ?
+        </text>
+        <text x={42} y={540} className="map-legend-label">
+          アイテム入手マス(ランダム入手)
+        </text>
+        <circle cx={330} cy={536} r={8} fill="#3b4256" stroke="#1c2333" strokeWidth={1} />
+        <circle cx={330} cy={536} r={11} className="station-shop-ring" />
+        <text
+          x={330}
+          y={540}
+          textAnchor="middle"
+          className="station-shop-mark station-shop-mark--legend"
+        >
+          S
+        </text>
+        <text x={348} y={540} className="map-legend-label">
+          ショップマス(現金で購入)
         </text>
       </g>
     </svg>

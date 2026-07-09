@@ -87,6 +87,16 @@ describe('boardgame.io 統合', () => {
     expect(after).toEqual(before); // INVALID_MOVE で状態は変化しない
   });
 
+  it('buyShopItem: ショップマス以外では購入できない(状態が変化しない)', () => {
+    const client = createClient();
+    // 開始駅 central は shop マスではないため、購入は成立しない
+    const before = client.getState()!.G;
+    client.moves.buyShopItem('double-dice');
+    const after = client.getState()!.G;
+
+    expect(after).toEqual(before); // INVALID_MOVE で状態は変化しない
+  });
+
   it('全プレイヤーが一巡すると月が進む', () => {
     const client = createClient(2);
 

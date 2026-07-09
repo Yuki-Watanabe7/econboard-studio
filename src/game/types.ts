@@ -23,9 +23,11 @@ export type PropertyCategory = 'food' | 'tourism' | 'industry' | 'retail' | 'tec
  * - normal: 到着効果なし
  * - event: 到着時に経済イベントが1件発生する
  * - cashEvent: 到着時に所持金イベント(現金の増減)が1件発生する
+ * - item: 到着時にランダムでアイテムを1つ獲得する(所持上限に達している場合は入手できない)
+ * - shop: 到着後、現金を払ってアイテムを購入できる(自動発生する効果はない)
  * 将来 'card' | 'bonus' などを追加する想定(schema.ts の enum も併せて更新する)
  */
-export type StationType = 'normal' | 'event' | 'cashEvent';
+export type StationType = 'normal' | 'event' | 'cashEvent' | 'item' | 'shop';
 
 export interface Region {
   id: RegionId;
@@ -131,6 +133,16 @@ export interface ItemDefinition {
 export interface PlayerInventoryItem {
   instanceId: string;
   itemId: ItemId;
+}
+
+/**
+ * ショップマスの品揃え1件(編集可能なデータ)。
+ * 到着後、現金を price 支払うことで対象アイテムを購入できる(rules/items.ts の buyShopItem)。
+ */
+export interface ShopOffer {
+  itemId: ItemId;
+  /** 購入価格(通貨単位: G) */
+  price: number;
 }
 
 export interface Player {

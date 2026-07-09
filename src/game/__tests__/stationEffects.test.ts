@@ -3,7 +3,7 @@ import { resolveStationArrival, selectEconomicEvent } from '../rules/stationEffe
 import { movePlayer } from '../rules/movement';
 import { calculatePropertyIncome } from '../rules/economy';
 import { recalculateAllNetWorth } from '../rules/settlement';
-import { sampleEvents } from '../sampleData';
+import { itemMassPool, sampleCashEvents, sampleEvents, sampleItems } from '../sampleData';
 import type { GameState, StationId } from '../types';
 import { giveProperty, setupState } from './testUtils';
 
@@ -104,5 +104,43 @@ describe('resolveStationArrival', () => {
     const next = recalculateAllNetWorth(result.state);
     const player = next.players.find((p) => p.id === '0')!;
     expect(player.netWorth).toBe(player.cash + Math.round(1300 * 0.7));
+  });
+
+  it('アイテム入手マスに到着するとアイテムを1つ入手する', () => {
+    // university は stationType: 'item'
+    const state = arriveAt('university');
+    const result = resolveStationArrival(
+      state,
+      '0',
+      sampleEvents,
+      sampleCashEvents,
+      () => 0,
+      sampleItems,
+      itemMassPool,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.state.players[0].inventory).toHaveLength(1);
+    expect(result.state.logs.some((l) => l.type === 'item')).toBe(true);
+  });
+
+  it('ショップマスに到着しても自動では何も起きない(購入は能動操作)', () => {
+    // mountain-gate は stationType: 'shop'
+    const state = arriveAt('mountain-gate');
+    const result = resolveStationArrival(
+      state,
+      '0',
+      sampleEvents,
+      sampleCashEvents,
+      () => 0,
+      sampleItems,
+      itemMassPool,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.state.players[0].inventory).toHaveLength(0);
+    expect(result.state.logs).toHaveLength(state.logs.length);
   });
 });

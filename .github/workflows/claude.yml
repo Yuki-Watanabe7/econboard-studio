@@ -41,6 +41,9 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
+          # 失敗時に原因を追えるよう、実行トランスクリプトをログに残す
+          show_full_output: true
+
           claude_args: |
             --allowedTools "Bash(bash scripts/quality-check.sh),Bash(npm run:*),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*)"
             --append-system-prompt "コードを変更した場合は、コミットや完了報告の前に必ず bash scripts/quality-check.sh を実行すること。失敗したらエラーを調査して修正し、全チェックが通るまで繰り返す。最終実行が通っていない状態で完了と報告しない。権限や環境の問題で実行できない場合は、その旨を明示的に報告し、完了報告を作成しないこと。"

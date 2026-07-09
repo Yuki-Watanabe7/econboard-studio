@@ -53,6 +53,22 @@ export function StationView({
           </text>
         </>
       )}
+      {station.stationType === 'item' && (
+        <>
+          <circle cx={x} cy={y} r={20} className="station-item-ring" />
+          <text x={x} y={y + 5} textAnchor="middle" className="station-item-mark">
+            ?
+          </text>
+        </>
+      )}
+      {station.stationType === 'shop' && (
+        <>
+          <circle cx={x} cy={y} r={20} className="station-shop-ring" />
+          <text x={x} y={y + 5} textAnchor="middle" className="station-shop-mark">
+            S
+          </text>
+        </>
+      )}
       {isDestination && (
         <>
           <circle cx={x} cy={y} r={24} className="station-destination-ring" />

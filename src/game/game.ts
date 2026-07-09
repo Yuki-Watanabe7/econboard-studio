@@ -1,8 +1,8 @@
 import type { Game, Move } from 'boardgame.io';
 import { INVALID_MOVE } from 'boardgame.io/core';
-import type { GameState, PlayerId, PropertyId, StationId } from './types';
+import type { GameState, ItemId, PlayerId, PropertyId, StationId } from './types';
 import { createInitialState, type InitialStateOptions } from './initialState';
-import { findPlayer } from './rules/helpers';
+import { findPlayer, findStation } from './rules/helpers';
 import { applyDiceRoll, movePlayer } from './rules/movement';
 import { resolveStationArrival } from './rules/stationEffects';
 import { resolveDestinationArrival } from './rules/destination';
@@ -17,8 +17,14 @@ import {
 import { applyEconomicEvent } from './rules/economy';
 import { applyCashEvent } from './rules/cashEvents';
 import { declareBankruptcy, skipBankruptPlayerTurn } from './rules/bankruptcy';
-import { handleUseItem } from './rules/items';
-import { sampleCashEvents, sampleEvents, sampleItems } from './sampleData';
+import { buyShopItem, handleUseItem } from './rules/items';
+import {
+  itemMassPool,
+  sampleCashEvents,
+  sampleEvents,
+  sampleItems,
+  shopOffers,
+} from './sampleData';
 
 /**
  * boardgame.io 統合レイヤー。
@@ -56,6 +62,8 @@ const moveTo: Move<GameState> = ({ G, random }, toStationId: StationId) => {
     sampleEvents,
     sampleCashEvents,
     () => random.Number(),
+    sampleItems,
+    itemMassPool,
   );
   if (!arrival.ok) return INVALID_MOVE;
   return { ...arrival.state, reachableStationIds: [], turnStage: 'arrived' as const };
@@ -139,6 +147,24 @@ const useItemMove: Move<GameState> = ({ G, random }, instanceId: string) => {
   return result.state;
 };
 
+/**
+ * ショップマスでアイテムを購入する。到着後('arrived')・ショップマス上でのみ有効。
+ * 現金不足・所持上限・ゲーム終了後・非ショップマスは INVALID_MOVE。
+ */
+const buyShopItemMove: Move<GameState> = ({ G }, itemId: ItemId) => {
+  if (G.gameOver) return INVALID_MOVE;
+  if (G.turnStage !== 'arrived') return INVALID_MOVE;
+  const player = findPlayer(G, G.currentPlayerId);
+  if (!player) return INVALID_MOVE;
+  const station = findStation(G, player.currentStationId);
+  if (station?.stationType !== 'shop') return INVALID_MOVE;
+  const offer = shopOffers.find((o) => o.itemId === itemId);
+  if (!offer) return INVALID_MOVE;
+  const result = buyShopItem(G, G.currentPlayerId, offer, sampleItems);
+  if (!result.ok) return INVALID_MOVE;
+  return result.state;
+};
+
 /** 開発用: 指定プレイヤーを強制的に破産させる(将来は支払い系イベントから発生する想定) */
 const forceBankruptcy: Move<GameState> = ({ G }, playerId: PlayerId) => {
   if (G.gameOver) return INVALID_MOVE;
@@ -188,6 +214,7 @@ export const EconBoardGame: Game<GameState> = {
     acceptTradeOffer: acceptTradeOfferMove,
     rejectTradeOffer: rejectTradeOfferMove,
     useItem: useItemMove,
+    buyShopItem: buyShopItemMove,
     triggerEconomicEvent,
     triggerCashEvent,
     forceBankruptcy,

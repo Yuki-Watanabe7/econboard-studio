@@ -6,6 +6,7 @@ import { PropertyList } from './PropertyList';
 import { GameLog } from './GameLog';
 import { TradePanel } from './TradePanel';
 import { ItemPanel } from './ItemPanel';
+import { ShopPanel } from './ShopPanel';
 import { DebugPanel } from './DebugPanel';
 import { GameOverPanel } from './GameOverPanel';
 import { playerColor } from './constants';
@@ -92,6 +93,13 @@ export function GameBoard({ G, ctx, moves }: BoardProps<GameState>) {
               G={G}
               currentPlayerId={currentPlayerId}
               onUseItem={(instanceId) => moves.useItem(instanceId)}
+            />
+          )}
+          {!G.gameOver && (
+            <ShopPanel
+              G={G}
+              currentPlayerId={currentPlayerId}
+              onBuy={(itemId) => moves.buyShopItem(itemId)}
             />
           )}
           {!G.gameOver && (

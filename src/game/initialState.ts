@@ -7,13 +7,13 @@ export const INITIAL_CASH = 10000;
 export const START_STATION_ID = 'central';
 /** 既定のゲーム年数。この年の年次決算をもってゲーム終了となる */
 export const DEFAULT_GAME_LENGTH_YEARS = 3;
-/** 既定の初期所持アイテム。全プレイヤーに配布する(アイテム基盤・複数サイコロ系アイテム確認用) */
-export const DEFAULT_STARTING_ITEM_IDS: ItemId[] = [
-  'grant-cash-small',
-  'double-dice',
-  'triple-dice',
-  'reroll-dice',
-];
+/**
+ * 既定の初期所持アイテム。全プレイヤーに配布する。
+ * アイテム入手マス・ショップマス(issue #17)でゲーム中に自然にアイテムを得られるようになったため、
+ * 初期配布は所持上限(MAX_INVENTORY_SIZE = 3)内に抑え、入手マスで増やす余地を残す。
+ * 残りの複数サイコロ系アイテム(triple-dice / reroll-dice)は入手マス・ショップから獲得できる。
+ */
+export const DEFAULT_STARTING_ITEM_IDS: ItemId[] = ['grant-cash-small', 'double-dice'];
 
 /** 初期状態のオプション。将来 UI(セットアップ画面)から注入する想定 */
 export interface InitialStateOptions {
